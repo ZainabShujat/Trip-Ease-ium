@@ -83,11 +83,7 @@ export interface DayCluster {
 /** How clustering arrived at its answer. Reported, not hidden, because the
  *  fallbacks matter more than the happy path when data is thin. */
 export type ClusterStrategy =
-  | 'KMEANS'
-  | 'SINGLE_CLUSTER'
-  | 'ONE_PER_DAY'
-  | 'SCORE_ORDERED'
-  | 'EMPTY';
+  'KMEANS' | 'SINGLE_CLUSTER' | 'ONE_PER_DAY' | 'SCORE_ORDERED' | 'EMPTY';
 
 export interface ClusterResult {
   clusters: DayCluster[];

@@ -230,7 +230,7 @@ export const BUDGET = {
   /** Meals per day assumed when estimating food cost. */
   mealsPerDay: 3,
   /** Fallback per-person per-meal spend when no eatery is scheduled. */
-  fallbackMealCostPerPersonMinor: 35_000, // ₹350
+  fallbackMealCostPerPersonMinor: 20_000, // ₹200 — a simple meal, not a cafe brunch
   /** Under this fraction of budget used, flag an unused allowance. */
   underUtilisedRatio: 0.75,
   /** At or above this fraction, warn the budget is nearly exhausted. */

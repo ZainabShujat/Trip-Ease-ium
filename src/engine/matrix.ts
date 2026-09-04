@@ -57,10 +57,7 @@ export function createTravelLookup(matrix: TravelMatrix): TravelLookup {
  * Total travel minutes for a tour visiting `points` in order.
  * Returns null if any leg is missing, rather than quietly skipping it.
  */
-export function tourDurationMins(
-  points: readonly GeoPoint[],
-  lookup: TravelLookup,
-): number | null {
+export function tourDurationMins(points: readonly GeoPoint[], lookup: TravelLookup): number | null {
   let total = 0;
   for (let i = 0; i + 1 < points.length; i += 1) {
     const legMins = lookup.minutes(points[i]!, points[i + 1]!);
