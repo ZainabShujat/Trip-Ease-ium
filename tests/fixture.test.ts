@@ -22,7 +22,7 @@ import {
 describe('Delhi → Manali fixture', () => {
   it('has the volume the architecture calls for', () => {
     expect(MANALI_POIS.length).toBeGreaterThanOrEqual(20);
-    expect(MANALI_LODGING.length).toBe(6);
+    expect(MANALI_LODGING.length).toBeGreaterThanOrEqual(6);
     expect(DELHI_MANALI_SERVICES.length).toBeGreaterThanOrEqual(5);
     expect(MANALI_LOCAL_TRANSPORT.length).toBeGreaterThanOrEqual(4);
   });

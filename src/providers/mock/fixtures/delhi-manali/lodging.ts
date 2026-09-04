@@ -1,5 +1,6 @@
 import { rupees } from '@/lib/money';
-import type { LodgingOption, Provenance } from '@/lib/schemas';
+import { MOCK_PROVENANCE } from '../helpers';
+import type { LodgingSeed } from '../types';
 
 /**
  * Manali accommodation — development fixture.
@@ -13,23 +14,6 @@ import type { LodgingOption, Provenance } from '@/lib/schemas';
  * `totalRateMinor` is left at 0 here and computed by the provider once the
  * number of nights and rooms is known — a stay total is arithmetic, not data.
  */
-
-const MOCK_PROVENANCE: Provenance = {
-  sourceKind: 'mock',
-  provider: 'fixture:delhi-manali',
-  fetchedAt: '2026-01-01T00:00:00+05:30',
-  confidence: 'medium',
-};
-
-/** A property before stay-specific arithmetic is applied. */
-export type LodgingSeed = Omit<
-  LodgingOption,
-  'provenance' | 'totalRateMinor' | 'roomsRequired' | 'link' | 'amenities'
-> & {
-  amenities: string[];
-  /** Guests one room sleeps. Drives how many rooms the party needs. */
-  occupancyPerRoom: number;
-};
 
 export const MANALI_LODGING: LodgingSeed[] = [
   {
@@ -61,6 +45,24 @@ export const MANALI_LODGING: LodgingSeed[] = [
     checkInTime: '14:00',
     checkOutTime: '11:00',
     occupancyPerRoom: 3,
+  },
+  {
+    id: 'lodge-manalsu-homestay',
+    name: 'Manalsu Homestay',
+    geo: { lat: 32.2513, lng: 77.1795 },
+    area: 'Old Manali',
+    address: 'Manalsu Nala, Old Manali',
+    nightlyRateMinor: rupees(2600),
+    rating: 4.2,
+    reviewCount: 430,
+    tier: 'BUDGET',
+    amenities: ['wifi', 'hot water', 'kitchen', 'family room', 'mountain view'],
+    checkInTime: '12:00',
+    checkOutTime: '10:00',
+    // A four-bed family room. Without an option like this a party of four is
+    // forced into two rooms everywhere, which is what a real budget traveller
+    // in Manali would simply not do.
+    occupancyPerRoom: 4,
   },
   {
     id: 'lodge-beas-view',

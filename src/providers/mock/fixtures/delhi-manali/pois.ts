@@ -1,5 +1,6 @@
 import { rupees } from '@/lib/money';
-import type { OpeningHours, Poi, Provenance } from '@/lib/schemas';
+import type { Poi } from '@/lib/schemas';
+import { ALWAYS_OPEN, daily, dailyExcept, poi } from '../helpers';
 
 /**
  * Manali points of interest — development fixture.
@@ -9,49 +10,6 @@ import type { OpeningHours, Poi, Provenance } from '@/lib/schemas';
  * values, not verified schedules. Everything here is `mock` provenance and
  * must never be rendered as live data.
  */
-
-const MOCK_PROVENANCE: Provenance = {
-  sourceKind: 'mock',
-  provider: 'fixture:delhi-manali',
-  fetchedAt: '2026-01-01T00:00:00+05:30',
-  confidence: 'medium',
-};
-
-const ALL_WEEK: OpeningHours = { kind: 'always' };
-
-/** Same hours every day of the week. */
-function daily(opens: string, closes: string): OpeningHours {
-  return {
-    kind: 'weekly',
-    intervals: [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, opens, closes })),
-    closedWeekdays: [],
-  };
-}
-
-/** Same hours, but shut on the given weekdays (0 = Sunday). */
-function dailyExcept(opens: string, closes: string, closedWeekdays: number[]): OpeningHours {
-  return {
-    kind: 'weekly',
-    intervals: [0, 1, 2, 3, 4, 5, 6]
-      .filter((d) => !closedWeekdays.includes(d))
-      .map((weekday) => ({ weekday, opens, closes })),
-    closedWeekdays,
-  };
-}
-
-type PoiSeed = Omit<Poi, 'provenance' | 'tags' | 'typicalCostPerPersonMinor'> & {
-  tags?: string[];
-  typicalCostPerPersonMinor?: number;
-};
-
-function poi(seed: PoiSeed): Poi {
-  return {
-    ...seed,
-    tags: seed.tags ?? [],
-    typicalCostPerPersonMinor: seed.typicalCostPerPersonMinor ?? 0,
-    provenance: MOCK_PROVENANCE,
-  };
-}
 
 export const MANALI_POIS: Poi[] = [
   // --- Central Manali ------------------------------------------------------
@@ -207,7 +165,7 @@ export const MANALI_POIS: Poi[] = [
     reviewCount: 3200,
     priceLevel: 0,
     typicalDurationMins: 25,
-    openingHours: ALL_WEEK,
+    openingHours: ALWAYS_OPEN,
     tags: ['roadside', 'spring', 'quick stop'],
   }),
   poi({
@@ -347,6 +305,51 @@ export const MANALI_POIS: Poi[] = [
     openingHours: daily('11:00', '23:00'),
     address: 'Near Mall Road, Manali',
     tags: ['food', 'north indian', 'vegetarian options', 'dinner'],
+  }),
+  poi({
+    id: 'poi-dhaba-beas',
+    providerRef: 'fixture:manali:beas-dhaba',
+    name: 'Beas Roadside Dhaba',
+    category: 'RESTAURANT',
+    geo: { lat: 32.2452, lng: 77.1866 },
+    rating: 4.0,
+    reviewCount: 1750,
+    priceLevel: 1,
+    typicalDurationMins: 45,
+    typicalCostPerPersonMinor: rupees(150),
+    openingHours: daily('07:00', '23:00'),
+    address: 'Manali bypass road',
+    tags: ['food', 'himachali', 'budget', 'vegetarian', 'dhaba', 'lunch', 'dinner'],
+  }),
+  poi({
+    id: 'poi-dhaba-oldmanali',
+    providerRef: 'fixture:manali:old-manali-dhaba',
+    name: 'Manalsu Bridge Dhaba',
+    category: 'RESTAURANT',
+    geo: { lat: 32.2521, lng: 77.1808 },
+    rating: 4.1,
+    reviewCount: 920,
+    priceLevel: 1,
+    typicalDurationMins: 45,
+    typicalCostPerPersonMinor: rupees(180),
+    openingHours: daily('07:30', '22:30'),
+    address: 'Old Manali road',
+    tags: ['food', 'north indian', 'budget', 'vegetarian', 'breakfast', 'lunch'],
+  }),
+  poi({
+    id: 'poi-bakery-vashisht',
+    providerRef: 'fixture:manali:vashisht-bakery',
+    name: 'Vashisht Corner Bakery',
+    category: 'CAFE',
+    geo: { lat: 32.2669, lng: 77.1879 },
+    rating: 4.2,
+    reviewCount: 610,
+    priceLevel: 1,
+    typicalDurationMins: 40,
+    typicalCostPerPersonMinor: rupees(200),
+    openingHours: daily('07:00', '21:00'),
+    address: 'Vashisht Village',
+    tags: ['cafes', 'bakery', 'breakfast', 'budget', 'coffee'],
   }),
   poi({
     id: 'poi-restaurant-himalayan-thali',

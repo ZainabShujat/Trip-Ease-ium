@@ -27,7 +27,7 @@ import type {
   WeatherProvider,
 } from '../types';
 import { ProviderUnavailableError } from '../types';
-import { findFixture, MANALI_POIS } from './fixtures/delhi-manali';
+import { FIXTURES_BY_DESTINATION, findFixture } from './fixtures/registry';
 import { centroid, estimateLeg } from './geo';
 
 /**
@@ -102,7 +102,7 @@ export class MockTransportProvider implements TransportProvider {
       throw new ProviderUnavailableError(
         this.name,
         `no fixture for the route ${query.fromCity} → ${query.toCity}. ` +
-          `The mock provider only knows: Manali.`,
+          `The mock provider knows: ${Object.keys(FIXTURES_BY_DESTINATION).join(', ')}.`,
       );
     }
 
@@ -423,9 +423,10 @@ export class MockWeatherProvider implements WeatherProvider {
 // Corpus & assembly
 // ===========================================================================
 
-const POI_CORPUS: Record<string, Poi[]> = {
-  manali: MANALI_POIS,
-};
+/** Every POI the mock providers can serve, across all destinations. */
+const POI_CORPUS: Record<string, Poi[]> = Object.fromEntries(
+  Object.entries(FIXTURES_BY_DESTINATION).map(([city, fixture]) => [city, fixture.pois]),
+);
 
 export function createMockProviders(): ProviderSet {
   return {

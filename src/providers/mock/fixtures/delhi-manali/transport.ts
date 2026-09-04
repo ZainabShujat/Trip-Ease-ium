@@ -1,5 +1,5 @@
-import { rupees, type Minor } from '@/lib/money';
-import type { ComfortTier, TransportMode } from '@/lib/schemas';
+import { rupees } from '@/lib/money';
+import type { IntercityServiceSeed, LocalTransportSeed } from '../types';
 
 /**
  * Delhi ↔ Manali transport — development fixture.
@@ -17,21 +17,6 @@ import type { ComfortTier, TransportMode } from '@/lib/schemas';
  * the provider combines a template with the requested date, so the fixture
  * works for any travel date without going stale.
  */
-
-export interface IntercityServiceSeed {
-  id: string;
-  mode: TransportMode;
-  /** Service class, e.g. "State Roadways (Ordinary)". */
-  operator: string;
-  /** Local departure time at the origin, HH:MM. */
-  departTime: string;
-  durationMins: number;
-  pricePerPersonMinor: Minor;
-  comfortTier: ComfortTier;
-  isOvernight: boolean;
-  /** Shown in the option card; explains the trade-off in plain terms. */
-  note: string;
-}
 
 export const DELHI_MANALI_SERVICES: IntercityServiceSeed[] = [
   {
@@ -114,16 +99,6 @@ export const DELHI_MANALI_SERVICES: IntercityServiceSeed[] = [
 ];
 
 /** Ways of getting around Manali once you are there. */
-export interface LocalTransportSeed {
-  id: string;
-  mode: TransportMode;
-  operator: string;
-  /** Typical per-person daily spend on this mode. */
-  pricePerPersonMinor: Minor;
-  comfortTier: ComfortTier;
-  note: string;
-}
-
 export const MANALI_LOCAL_TRANSPORT: LocalTransportSeed[] = [
   {
     id: 'local-walk',
