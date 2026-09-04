@@ -62,6 +62,14 @@ interface DayContext {
   relaxed: Relaxations;
   poiById: Map<string, Poi>;
   eateries: Poi[];
+  /** Eateries already used, across the whole trip. Keeps the plan from
+   *  sending the party to the same dhaba nine times in five days. */
+  eateryUseCount: Map<string, number>;
+  /** When the trip is budget-constrained, eat by price rather than by
+   *  proximity. Set by the orchestrator on a retry, never by default: a
+   *  traveller with room in the budget should not be routed to the cheapest
+   *  dhaba in town. */
+  costSensitive: boolean;
 }
 
 let itemCounter = 0;
@@ -122,22 +130,89 @@ function scheduleDay(
 ): { items: ItineraryItem[]; unplaced: Array<{ poiId: string; reason: string }> } {
   const items: ItineraryItem[] = [];
   const unplaced: Array<{ poiId: string; reason: string }> = [];
+  const { brief, selections, lookup, relaxed } = ctx;
+
+  // --- intercity legs -------------------------------------------------------
+  // Added before the window check, because the day the party leaves Delhi is
+  // not an activity day but it is emphatically not an empty one either.
+  // A journey spanning midnight is shown up to the end of the waking window
+  // with its true arrival in the note; ItineraryItem is a within-day shape by
+  // design, and splitting a bus ride across two rows would be worse.
+  const sleepMins = timeToMins(brief.sleepTime);
+
+  const pushLeg = (leg: typeof selections.outbound, label: string) => {
+    if (!leg.departAt) return;
+    if (leg.departAt.slice(0, 10) !== frame.date) return;
+    const departMins = timeToMins(leg.departAt.slice(11, 16));
+    const shownMins = Math.max(30, Math.min(leg.durationMins, sleepMins - departMins));
+    if (shownMins <= 0) return;
+
+    const arrivesLater = leg.arriveAt ? leg.arriveAt.slice(0, 10) !== frame.date : false;
+    const note = leg.arriveAt
+      ? `${leg.operator}. Arrives ${leg.arriveAt.slice(11, 16)}${
+          arrivesLater ? ` on ${leg.arriveAt.slice(0, 10)}` : ''
+        }.`
+      : leg.operator;
+
+    items.push(
+      makeItem({
+        dayIndex: frame.dayIndex,
+        seq: items.length,
+        title: `${label}: ${leg.fromName} to ${leg.toName}`,
+        category: 'TRANSPORT',
+        startMins: departMins,
+        durationMins: shownMins,
+        ...(leg.fromGeo ? { geo: leg.fromGeo } : {}),
+        costMinor: leg.pricePerPersonMinor * brief.travellerCount,
+        ...(leg.link ? { link: leg.link } : {}),
+        notes: note,
+      }),
+    );
+  };
+
+  pushLeg(selections.outbound, 'Travel');
+  pushLeg(selections.inbound, 'Return');
 
   if (frame.windowStartMins === null || frame.windowEndMins === null) {
+    items.forEach((item, i) => {
+      item.seq = i;
+    });
     return { items, unplaced };
   }
 
-  const { brief, selections, lookup, relaxed } = ctx;
   const pace = PACE_PROFILES[brief.pace];
   const weekday = weekdayOf(frame.date);
   const travellers = brief.travellerCount;
 
   let clock = frame.windowStartMins;
-  let seq = 0;
+  let seq = items.length;
   let position: GeoPoint = selections.lodging.geo;
   let activityCount = 0;
   let travelMins = 0;
   const mealsTaken = new Set<string>();
+  const eateriesToday = new Set<string>();
+
+  // --- hotel check-out anchors the START of the departure day ----------------
+  // Placed before anything else rather than appended afterwards: appending a
+  // fixed-time item to an already-scheduled day is how it lands on top of a
+  // meal. Activities on the departure day follow check-out, bags stored.
+  if (frame.isDepartureDay) {
+    const checkOutMins = Math.max(clock, timeToMins(selections.lodging.checkOutTime));
+    if (checkOutMins + SCHEDULING.checkOutDurationMins <= frame.windowEndMins) {
+      items.push(
+        makeItem({
+          dayIndex: frame.dayIndex,
+          seq: seq++,
+          title: `Check out of ${selections.lodging.name}`,
+          category: 'CHECK_OUT',
+          startMins: checkOutMins,
+          durationMins: SCHEDULING.checkOutDurationMins,
+          geo: selections.lodging.geo,
+        }),
+      );
+      clock = checkOutMins + SCHEDULING.checkOutDurationMins;
+    }
+  }
 
   // --- hotel check-in on the arrival day ------------------------------------
   if (frame.isArrivalDay) {
@@ -189,29 +264,42 @@ function scheduleDay(
     }
 
     // Soft: daily travel tolerance.
-    if (
-      !relaxed.has('DAILY_TRAVEL_LIMIT') &&
-      travelMins + legMins > brief.maxDailyTravelMins
-    ) {
+    if (!relaxed.has('DAILY_TRAVEL_LIMIT') && travelMins + legMins > brief.maxDailyTravelMins) {
       unplaced.push({ poiId: poi.id, reason: 'would exceed the daily travel tolerance' });
       continue;
     }
 
     let arrive = clock + legMins;
+    // The leg actually travelled to reach this POI. Diverges from `legMins`
+    // when a meal is inserted en route and the journey restarts from the
+    // restaurant — recording the pre-meal leg would overstate travel and
+    // contradict the times written alongside it.
+    let effectiveLegMins = legMins;
+    let legFrom = position;
 
     // A meal window reached en route is taken before the next sight.
     const meal = mealWindowAt(arrive);
     if (meal && !mealsTaken.has(meal.name)) {
       const placed = placeMeal(ctx, frame, {
         seq,
-        startMins: Math.max(arrive, meal.startMins),
+        // Depart from where we are now. Basing this on `arrive` (the time we
+        // would reach the next POI) double-counts a leg we have not taken.
+        startMins: Math.max(clock, meal.startMins),
         position,
         weekday,
         travellers,
+        excludeIds: eateriesToday,
       });
       if (placed) {
         items.push(placed.item);
         mealsTaken.add(meal.name);
+        if (placed.item.poiId) {
+          eateriesToday.add(placed.item.poiId);
+          ctx.eateryUseCount.set(
+            placed.item.poiId,
+            (ctx.eateryUseCount.get(placed.item.poiId) ?? 0) + 1,
+          );
+        }
         seq += 1;
         clock = timeToMins(placed.item.endTime);
         position = placed.item.geo ?? position;
@@ -221,6 +309,8 @@ function scheduleDay(
           continue;
         }
         arrive = clock + relegMins;
+        effectiveLegMins = relegMins;
+        legFrom = position;
       }
     }
 
@@ -274,8 +364,8 @@ function scheduleDay(
         poiId: poi.id,
         costMinor: poi.typicalCostPerPersonMinor * travellers,
         travelFromPrev: {
-          durationMins: legMins,
-          distanceMetres: lookup.metres(position, poi.geo) ?? 0,
+          durationMins: effectiveLegMins,
+          distanceMetres: lookup.metres(legFrom, poi.geo) ?? 0,
           mode: 'CAR',
         },
       }),
@@ -284,7 +374,7 @@ function scheduleDay(
     clock = end + pace.bufferMins;
     position = poi.geo;
     activityCount += 1;
-    travelMins += legMins;
+    travelMins += effectiveLegMins;
   }
 
   // --- any meal windows still unserved --------------------------------------
@@ -302,34 +392,21 @@ function scheduleDay(
       position,
       weekday,
       travellers,
+      excludeIds: eateriesToday,
     });
     if (placed) {
       items.push(placed.item);
       mealsTaken.add(window.name);
+      if (placed.item.poiId) {
+        eateriesToday.add(placed.item.poiId);
+        ctx.eateryUseCount.set(
+          placed.item.poiId,
+          (ctx.eateryUseCount.get(placed.item.poiId) ?? 0) + 1,
+        );
+      }
       seq += 1;
       clock = timeToMins(placed.item.endTime) + pace.bufferMins;
       position = placed.item.geo ?? position;
-    }
-  }
-
-  // --- checkout on the departure day ----------------------------------------
-  if (frame.isDepartureDay) {
-    const checkOutMins = timeToMins(selections.lodging.checkOutTime);
-    if (
-      checkOutMins >= frame.windowStartMins &&
-      checkOutMins + SCHEDULING.checkOutDurationMins <= frame.windowEndMins
-    ) {
-      items.push(
-        makeItem({
-          dayIndex: frame.dayIndex,
-          seq: seq++,
-          title: `Check out of ${selections.lodging.name}`,
-          category: 'CHECK_OUT',
-          startMins: checkOutMins,
-          durationMins: SCHEDULING.checkOutDurationMins,
-          geo: selections.lodging.geo,
-        }),
-      );
     }
   }
 
@@ -351,14 +428,38 @@ function placeMeal(
     position: GeoPoint;
     weekday: number;
     travellers: number;
+    /** Eateries already visited today. Never twice in one day. */
+    excludeIds: Set<string>;
   },
 ): { item: ItineraryItem } | null {
   if (frame.windowEndMins === null) return null;
 
-  const candidates = ctx.eateries
+  // Nearest-then-cheapest: take the handful of closest open eateries and pick
+  // the least expensive among them. Purely nearest ignores that a family of
+  // four eating every meal at a tourist cafe is most of a modest budget;
+  // purely cheapest sends them across town for lunch.
+  const NEAREST_POOL = ctx.costSensitive ? 10 : 4;
+  const reachable = ctx.eateries
     .map((poi) => ({ poi, mins: ctx.lookup.minutes(args.position, poi.geo) }))
     .filter((c): c is { poi: Poi; mins: number } => c.mins !== null)
     .sort((a, b) => a.mins - b.mins || a.poi.id.localeCompare(b.poi.id));
+
+  const candidates = [
+    ...reachable.slice(0, NEAREST_POOL).sort((a, b) =>
+      ctx.costSensitive
+        ? // Money first when the budget is tight, novelty only as a tiebreak.
+          a.poi.typicalCostPerPersonMinor - b.poi.typicalCostPerPersonMinor ||
+          (ctx.eateryUseCount.get(a.poi.id) ?? 0) - (ctx.eateryUseCount.get(b.poi.id) ?? 0) ||
+          a.mins - b.mins ||
+          a.poi.id.localeCompare(b.poi.id)
+        : // Somewhere new first, then cheaper, then nearer.
+          (ctx.eateryUseCount.get(a.poi.id) ?? 0) - (ctx.eateryUseCount.get(b.poi.id) ?? 0) ||
+          a.poi.typicalCostPerPersonMinor - b.poi.typicalCostPerPersonMinor ||
+          a.mins - b.mins ||
+          a.poi.id.localeCompare(b.poi.id),
+    ),
+    ...reachable.slice(NEAREST_POOL),
+  ].filter((c) => !args.excludeIds.has(c.poi.id));
 
   for (const { poi, mins } of candidates) {
     const arrive = args.startMins + mins;
@@ -449,6 +550,7 @@ function schedulePass(
   frames: readonly DayFrame[],
   lookup: TravelLookup,
   active: RelaxableConstraint[],
+  costSensitive: boolean,
 ): ScheduleOutcome {
   itemCounter = 0;
 
@@ -461,6 +563,8 @@ function schedulePass(
     eateries: selections.shortlist.filter(
       (p) => p.category === 'RESTAURANT' || p.category === 'CAFE',
     ),
+    eateryUseCount: new Map<string, number>(),
+    costSensitive,
   };
 
   const days: ItineraryDay[] = [];
@@ -477,10 +581,7 @@ function schedulePass(
       date: frame.date,
       items: result.items,
       totalCostMinor: result.items.reduce((s, i) => s + i.estimatedCostMinor, 0),
-      totalTravelMins: result.items.reduce(
-        (s, i) => s + (i.travelFromPrev?.durationMins ?? 0),
-        0,
-      ),
+      totalTravelMins: result.items.reduce((s, i) => s + (i.travelFromPrev?.durationMins ?? 0), 0),
     };
     if (cluster) day.clusterCentroid = cluster.centroid;
     days.push(day);
@@ -496,20 +597,36 @@ function schedulePass(
  * A day the traveller is present for that contains nothing is a failure of
  * the plan, not a quiet gap in it.
  */
+export interface ScheduleOptions {
+  /** Prefer cheaper meals and skip optional paid sights. Used by the
+   *  orchestrator when a first pass came out over budget. */
+  costSensitive?: boolean;
+}
+
 export function runScheduleStage(
   brief: TripBrief,
   selections: Selections,
   clusters: readonly DayCluster[],
   frames: readonly DayFrame[],
   lookup: TravelLookup,
+  options: ScheduleOptions = {},
 ): ScheduleOutcome {
+  const costSensitive = options.costSensitive ?? false;
   const activityDayIndexes = frames.filter((f) => f.isActivityDay).map((f) => f.dayIndex);
 
   let best: ScheduleOutcome | null = null;
 
   for (let depth = 0; depth <= RELAXATION_ORDER.length; depth += 1) {
     const active = RELAXATION_ORDER.slice(0, depth) as RelaxableConstraint[];
-    const outcome = schedulePass(brief, selections, clusters, frames, lookup, [...active]);
+    const outcome = schedulePass(
+      brief,
+      selections,
+      clusters,
+      frames,
+      lookup,
+      [...active],
+      costSensitive,
+    );
 
     const emptyActivityDays = activityDayIndexes.filter((index) => {
       const day = outcome.days.find((d) => d.dayIndex === index);
@@ -524,5 +641,5 @@ export function runScheduleStage(
   // Every relaxation exhausted. Return the best attempt; the validator decides
   // whether what remains is presentable, and the orchestrator turns an
   // unusable result into INFEASIBLE_CONSTRAINTS.
-  return best ?? schedulePass(brief, selections, clusters, frames, lookup, []);
+  return best ?? schedulePass(brief, selections, clusters, frames, lookup, [], costSensitive);
 }

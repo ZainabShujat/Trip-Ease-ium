@@ -72,9 +72,9 @@ export function localTransportCostMinor(
 export function scheduledFoodCostMinor(days: readonly ItineraryDay[]): number {
   return sumMinor(
     days.flatMap((day) =>
-      day.items.filter((i) => i.category === 'MEAL' || i.category === 'CAFE').map(
-        (i) => i.estimatedCostMinor,
-      ),
+      day.items
+        .filter((i) => i.category === 'MEAL' || i.category === 'CAFE')
+        .map((i) => i.estimatedCostMinor),
     ),
   );
 }
@@ -84,7 +84,9 @@ export function scheduledActivityCostMinor(days: readonly ItineraryDay[]): numbe
   return sumMinor(
     days.flatMap((day) =>
       day.items
-        .filter((i) => i.category === 'SIGHT' || i.category === 'ACTIVITY' || i.category === 'SHOPPING')
+        .filter(
+          (i) => i.category === 'SIGHT' || i.category === 'ACTIVITY' || i.category === 'SHOPPING',
+        )
         .map((i) => i.estimatedCostMinor),
     ),
   );
