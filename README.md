@@ -4,10 +4,10 @@ End-to-end trip planning and management: intercity transport, accommodation,
 places, a validated day-by-day itinerary, a budget that adds up, and dynamic
 re-planning when constraints change.
 
-**Current status: Phase 2 — The Engine, Offline.** The deterministic planning
-engine is complete and tested. Authentication, the Trip Dashboard and the AI
-layer are later phases; the site at `/` is still a status page, and becomes the
-product in Phase 4.
+**Current status: Phase 3 — Foundation.** Sign in, plan a trip, and it saves.
+The root URL is the planner. Phase 4 turns the trip page into the full
+dashboard (map, timeline interactions, switching alternatives); the AI layer
+is Phase 6.
 
 ## The governing decision
 
@@ -32,17 +32,24 @@ npm test
 npm run dev
 ```
 
-No API keys and no database are required. `PROVIDER_MODE` defaults to `mock`,
-which serves deterministic fixtures and makes zero network calls. Open
-[localhost:3000](http://localhost:3000), or `/api/health` for provider status.
+The app runs and the full test suite passes with **no keys and no database**.
+Planning works offline against fixtures.
 
-To connect a database (needed from Phase 3 onward):
+To sign in and save trips you need a Postgres database and a signing secret:
 
 ```bash
-cp .env.example .env
-# paste your Neon connection string into DATABASE_URL, then:
-npm run db:migrate
+cp .env.example .env.local
 ```
+
+1. Create a free project at [neon.com](https://neon.com) and copy the pooled
+   connection string into `DATABASE_URL`.
+2. Run `npx auth secret` and put the value in `AUTH_SECRET`.
+3. Copy both into `.env` as well, so the Prisma CLI can see them.
+4. `npm run db:migrate`
+
+Google sign-in is optional — leave `AUTH_GOOGLE_*` blank and the button is
+hidden. Until the database is configured, every page says so and names the
+missing variable rather than erroring.
 
 ## Verifying
 
@@ -56,7 +63,7 @@ Runs `typecheck`, `lint` and `test` in sequence. Individually:
 | ------------------- | ----------------------------------------------- |
 | `npm run typecheck` | `tsc --noEmit`, strict plus `noUncheckedIndexedAccess` |
 | `npm run lint`      | ESLint, including the engine-purity rule        |
-| `npm test`          | Vitest, 279 tests                               |
+| `npm test`          | Vitest, 327 tests                               |
 | `npm run build`     | Production build                                |
 | `npm run format`    | Prettier                                        |
 
@@ -67,9 +74,10 @@ src/
   app/            routes — thin; parse, authorise, delegate, render
   components/     presentational; no business logic, no fetching
   engine/         ◆ pure TypeScript, no framework imports ◆
+  planning/       composition root: calls providers, hands the engine data
   ai/             LlmClient interface, versioned prompts, task schemas
   providers/      interfaces + mock/live implementations + link builder
-  server/         db client, env validation
+  server/         auth, db client, env validation, trip persistence
   lib/            domain schemas (Zod), money, shared types
 prisma/           schema + migrations
 tests/            Vitest suites and fixture entry point
