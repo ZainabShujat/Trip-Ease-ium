@@ -1,6 +1,6 @@
 import type { GeoPoint, Poi, TripBrief } from '@/lib/schemas';
 import { CLUSTERING, PACE_PROFILES } from '../config';
-import type { ClusterResult, DayCluster, DayFrame, ScoredPoi, Selections } from '../types';
+import type { ClusterResult, DayFrame, ScoredPoi, Selections } from '../types';
 
 /**
  * Geographic clustering: which POIs belong to which day.
@@ -237,7 +237,9 @@ export function runClusterStage(
   const scoreOf = new Map(selections.scored.map((s: ScoredPoi) => [s.poi.id, s.score]));
   const sights = selections.shortlist
     .filter((p) => p.category !== 'RESTAURANT' && p.category !== 'CAFE')
-    .sort((a, b) => (scoreOf.get(b.id) ?? 0) - (scoreOf.get(a.id) ?? 0) || a.id.localeCompare(b.id));
+    .sort(
+      (a, b) => (scoreOf.get(b.id) ?? 0) - (scoreOf.get(a.id) ?? 0) || a.id.localeCompare(b.id),
+    );
 
   if (activityDays.length === 0) {
     notes.push('No day has enough usable time for activities.');

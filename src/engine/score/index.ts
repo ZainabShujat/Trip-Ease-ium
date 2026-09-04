@@ -180,7 +180,9 @@ export function scoreTransport(
     preference = 0.3;
   }
 
-  return priceFit * w.priceFit + speed * w.speed + comfort * w.comfort + preference * w.preferenceMatch;
+  return (
+    priceFit * w.priceFit + speed * w.speed + comfort * w.comfort + preference * w.preferenceMatch
+  );
 }
 
 /**
@@ -211,7 +213,8 @@ export function pickTransportArchetypes(
       a.option.id.localeCompare(b.option.id),
   );
   const byDuration = [...scored].sort(
-    (a, b) => a.option.durationMins - b.option.durationMins || a.option.id.localeCompare(b.option.id),
+    (a, b) =>
+      a.option.durationMins - b.option.durationMins || a.option.id.localeCompare(b.option.id),
   );
   const byScore = [...scored].sort(
     (a, b) => b.score - a.score || a.option.id.localeCompare(b.option.id),
@@ -252,7 +255,9 @@ export function scoreLodging(
     : 0.5;
   const tierMatch = option.tier === brief.lodgingTier ? 1 : 0.4;
 
-  return priceFit * w.priceFit + quality * w.quality + proximity * w.proximity + tierMatch * w.tierMatch;
+  return (
+    priceFit * w.priceFit + quality * w.quality + proximity * w.proximity + tierMatch * w.tierMatch
+  );
 }
 
 export function pickLodgingArchetypes(
@@ -270,11 +275,15 @@ export function pickLodgingArchetypes(
   }));
 
   const byPrice = [...scored].sort(
-    (a, b) => a.option.totalRateMinor - b.option.totalRateMinor || a.option.id.localeCompare(b.option.id),
+    (a, b) =>
+      a.option.totalRateMinor - b.option.totalRateMinor || a.option.id.localeCompare(b.option.id),
   );
-  const byScore = [...scored].sort((a, b) => b.score - a.score || a.option.id.localeCompare(b.option.id));
+  const byScore = [...scored].sort(
+    (a, b) => b.score - a.score || a.option.id.localeCompare(b.option.id),
+  );
   const byPremium = [...scored].sort(
-    (a, b) => b.option.totalRateMinor - a.option.totalRateMinor || a.option.id.localeCompare(b.option.id),
+    (a, b) =>
+      b.option.totalRateMinor - a.option.totalRateMinor || a.option.id.localeCompare(b.option.id),
   );
 
   const picked: LodgingOption[] = [];
@@ -317,8 +326,8 @@ export function runScoreStage(
   candidates: SourcedCandidates,
   options: ScoreOptions = {},
 ): Selections | null {
-  const destinationCentre =
-    brief.destination.geo ?? centroidOf(candidates.pois.map((p) => p.geo)) ?? { lat: 0, lng: 0 };
+  const destinationCentre = brief.destination.geo ??
+    centroidOf(candidates.pois.map((p) => p.geo)) ?? { lat: 0, lng: 0 };
 
   const scored = scorePois(candidates.pois, brief, destinationCentre);
   const eligible = scored.filter((s) => s.excludedBy === undefined);
