@@ -1,0 +1,678 @@
+// AI Travel Planner — persistence layer
+// Approved architecture, Phase 0 §D.
+//
+// Two conventions run through this schema:
+//
+//   1. MONEY IS INTEGER MINOR UNITS (paise for INR). Every monetary column is
+//      an Int suffixed `...Minor`. No Float, no Decimal-to-float drift — the
+//      budget engine must add up exactly, and the unit is unmistakable at the
+//      call site. Convert at the edges with src/lib/money.ts.
+//
+//   2. PROVENANCE TRAVELS WITH THE DATA. Anything sourced from a provider
+//      carries `sourceKind` and `confidence` so the UI can never render an
+//      estimate as though it were a live booking.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Connection URL lives in prisma.config.ts (Prisma 7 requirement); the
+// application connects via the node-postgres driver adapter in src/server/db.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================================================
+// ENUMS
+// ===========================================================================
+
+enum TripStatus {
+  DRAFT
+  PLANNING
+  DRAFT_INVALID
+  PLANNED
+  BOOKING
+  TRAVELLING
+  COMPLETED
+  CANCELLED
+}
+
+enum SourceKind {
+  LIVE
+  CACHED
+  ESTIMATED
+  MOCK
+}
+
+enum Confidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TransportDirection {
+  OUTBOUND
+  RETURN
+  LOCAL
+}
+
+enum TransportMode {
+  BUS
+  TRAIN
+  FLIGHT
+  CAR
+  TAXI
+  AUTO_RICKSHAW
+  SCOOTER
+  WALK
+}
+
+enum ComfortTier {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
+enum TransportArchetype {
+  CHEAPEST
+  BALANCED
+  FASTEST
+}
+
+enum LodgingArchetype {
+  BUDGET
+  BEST_OVERALL
+  PREMIUM
+}
+
+enum LodgingTier {
+  BUDGET
+  MID
+  PREMIUM
+}
+
+enum PoiCategory {
+  SIGHT
+  ACTIVITY
+  RESTAURANT
+  CAFE
+  SHOPPING
+  NATURE
+  TEMPLE
+  MUSEUM
+  VIEWPOINT
+  MARKET
+}
+
+enum TripPoiStatus {
+  SHORTLISTED
+  SCHEDULED
+  REJECTED
+}
+
+enum ItemCategory {
+  TRANSPORT
+  CHECK_IN
+  CHECK_OUT
+  SIGHT
+  ACTIVITY
+  MEAL
+  CAFE
+  SHOPPING
+  REST
+  FREE_TIME
+}
+
+enum BookingStatus {
+  NOT_REQUIRED
+  NOT_STARTED
+  LINK_OPENED
+  BOOKED
+  CANCELLED
+}
+
+enum BudgetCategory {
+  TRANSPORT
+  ACCOMMODATION
+  FOOD
+  ACTIVITIES
+  LOCAL_TRANSPORT
+  MISC
+}
+
+enum BookingKind {
+  TRANSPORT
+  LODGING
+  ACTIVITY
+  OTHER
+}
+
+enum TaskKind {
+  BOOKING
+  DOCUMENT
+  PACKING
+  PERMIT
+  OTHER
+}
+
+enum TripPace {
+  RELAXED
+  BALANCED
+  PACKED
+}
+
+// ===========================================================================
+// AUTH.JS ADAPTER MODELS
+// Shapes required by @auth/prisma-adapter. Wired up in Phase 3; the tables
+// exist now so the first migration is the only one that touches identity.
+// ===========================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+
+  homeCity String?
+  currency String @default("INR")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  trips       Trip[]
+  savedPlaces SavedPlace[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ===========================================================================
+// TRIP CORE
+// ===========================================================================
+
+model Trip {
+  id     String @id @default(cuid())
+  userId String
+
+  title           String
+  originCity      String
+  originLat       Float?
+  originLng       Float?
+  destinationCity String
+  destLat         Float?
+  destLng         Float?
+
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+
+  travellerCount   Int
+  budgetTotalMinor Int
+  currency         String @default("INR")
+
+  status TripStatus @default(DRAFT)
+
+  currentVersionId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentVersion TripVersion?  @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+
+  versions      TripVersion[]     @relation("TripVersions")
+  travellers    Traveller[]
+  preference    TripPreference?
+  transportOpts TransportOption[]
+  lodgingOpts   LodgingOption[]
+  tripPois      TripPoi[]
+  days          ItineraryDay[]
+  budgetLines   BudgetLine[]
+  bookings      Booking[]
+  tasks         TripTask[]
+  llmCalls      LlmCall[]
+
+  @@index([userId, startDate])
+  @@index([status])
+}
+
+/// Immutable snapshot of a plan. Every replan writes a new version rather than
+/// mutating in place, which is what makes "get this under 35,000" undoable and
+/// what gives the evaluation harness a before/after pair to measure.
+model TripVersion {
+  id        String @id @default(cuid())
+  tripId    String
+  versionNo Int
+
+  /// Human-readable cause, e.g. "initial plan" or "SET_BUDGET 3500000".
+  reason    String
+  createdBy String @default("system")
+
+  /// Wall-clock milliseconds for the whole pipeline, and per-stage timings.
+  engineMs      Int?
+  stageTimingMs Json?
+
+  /// The one intentional JSON blob in this schema: the complete plan as it
+  /// stood. History lives here; the live trip is always the normalised tables
+  /// below, which is what gets queried and joined.
+  snapshot Json
+
+  createdAt DateTime @default(now())
+
+  trip        Trip               @relation("TripVersions", fields: [tripId], references: [id], onDelete: Cascade)
+  currentFor  Trip?              @relation("CurrentVersion")
+  validation  ValidationReport?
+
+  @@unique([tripId, versionNo])
+  @@index([tripId])
+}
+
+model Traveller {
+  id     String @id @default(cuid())
+  tripId String
+
+  name                String
+  ageBand             String?
+  accessibilityNeeds  String[]
+  dietary             String[]
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+/// The mutable input to every replan. One row per trip.
+model TripPreference {
+  tripId String @id
+
+  pace                    TripPace        @default(BALANCED)
+  wakeTime                String          @default("08:00")
+  sleepTime               String          @default("22:30")
+  interests               String[]
+  transportModes          TransportMode[]
+  avoidOvernightTransport Boolean         @default(false)
+  maxDailyTravelMins      Int             @default(240)
+  lodgingTier             LodgingTier     @default(MID)
+  foodPrefs               String[]
+  /// Free-text constraints the user stated that do not map to a typed field.
+  constraints             String[]
+  notes                   String?
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+// ===========================================================================
+// OPTIONS & SELECTIONS
+// ===========================================================================
+
+model TransportOption {
+  id     String @id @default(cuid())
+  tripId String
+
+  direction   TransportDirection
+  mode        TransportMode
+  operator    String
+  fromName    String
+  toName      String
+  departAt    DateTime?
+  arriveAt    DateTime?
+  durationMins Int
+
+  pricePerPersonMinor Int
+  comfortTier         ComfortTier
+  archetype           TransportArchetype?
+  score               Float?
+  rationale           String?
+
+  bookingUrl String?
+
+  providerRef String?
+  provider    String
+  sourceKind  SourceKind
+  confidence  Confidence
+  fetchedAt   DateTime
+
+  isSelected Boolean @default(false)
+
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([tripId, direction])
+}
+
+model LodgingOption {
+  id     String @id @default(cuid())
+  tripId String
+
+  name             String
+  lat              Float
+  lng              Float
+  address          String?
+  nightlyRateMinor Int
+  totalRateMinor   Int
+  rating           Float?
+  reviewCount      Int?
+  tier             LodgingTier
+  amenities        String[]
+
+  /// Metres from the centroid of this trip's shortlisted POIs. The number
+  /// behind "close to most of your activities".
+  distanceToCentroidM Int?
+
+  archetype LodgingArchetype?
+  score     Float?
+  rationale String?
+
+  bookingUrl String?
+
+  providerRef String?
+  provider    String
+  sourceKind  SourceKind
+  confidence  Confidence
+  fetchedAt   DateTime
+
+  isSelected Boolean @default(false)
+
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([tripId])
+}
+
+/// GLOBAL place cache, deliberately not scoped to a trip. Every trip that
+/// visits Manali reuses these rows: fewer provider calls, lower cost, and a
+/// growing dataset the evaluation harness can measure recommendations against.
+model Poi {
+  id          String @id @default(cuid())
+  providerRef String @unique
+
+  name                String
+  category            PoiCategory
+  lat                 Float
+  lng                 Float
+  rating              Float?
+  reviewCount         Int?
+  /// 0 = free, 4 = very expensive. Google Places convention.
+  priceLevel          Int?
+  typicalDurationMins Int
+  /// Structured OpeningHours (see src/lib/schemas/poi.ts), not free text.
+  openingHours        Json
+  address             String?
+  photoRef            String?
+  mapsUrl             String?
+  websiteUrl          String?
+  tags                String[]
+
+  provider      String
+  sourceKind    SourceKind
+  confidence    Confidence
+  lastFetchedAt DateTime
+
+  tripPois    TripPoi[]
+  items       ItineraryItem[]
+  savedPlaces SavedPlace[]
+
+  @@index([category])
+  @@index([lat, lng])
+}
+
+model TripPoi {
+  tripId String
+  poiId  String
+
+  score     Float?
+  rationale String?
+  status    TripPoiStatus @default(SHORTLISTED)
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  poi  Poi  @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@id([tripId, poiId])
+  @@index([poiId])
+}
+
+// ===========================================================================
+// ITINERARY
+// ===========================================================================
+
+model ItineraryDay {
+  id     String @id @default(cuid())
+  tripId String
+
+  dayIndex Int
+  date     DateTime @db.Date
+  summary  String?
+
+  clusterCentroidLat Float?
+  clusterCentroidLng Float?
+  totalCostMinor     Int   @default(0)
+  totalTravelMins    Int   @default(0)
+
+  trip  Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  items ItineraryItem[]
+
+  @@unique([tripId, dayIndex])
+  @@index([tripId])
+}
+
+model ItineraryItem {
+  id    String @id @default(cuid())
+  dayId String
+
+  seq      Int
+  title    String
+  category ItemCategory
+
+  /// Local wall-clock "HH:MM" at the destination. Deliberately not DateTime:
+  /// the scheduler reasons in local minutes-from-midnight, and storing a
+  /// timezone-bearing instant here invites off-by-one-day bugs. The owning
+  /// ItineraryDay carries the date.
+  startTime   String
+  endTime     String
+  durationMins Int
+
+  poiId String?
+  lat   Float?
+  lng   Float?
+
+  estimatedCostMinor Int @default(0)
+
+  travelMinsFromPrev  Int?
+  travelDistanceM     Int?
+  transportModeFromPrev TransportMode?
+
+  externalUrl String?
+  notes       String?
+
+  bookingStatus BookingStatus @default(NOT_REQUIRED)
+  /// Pinned through replans. Set once the user has actually booked something,
+  /// so re-optimisation can never move it out from under them.
+  isLocked      Boolean       @default(false)
+
+  day      ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  poi      Poi?         @relation(fields: [poiId], references: [id])
+  bookings Booking[]
+
+  @@unique([dayId, seq])
+  @@index([dayId])
+  @@index([poiId])
+}
+
+// ===========================================================================
+// MONEY & EXECUTION
+// ===========================================================================
+
+model BudgetLine {
+  id     String @id @default(cuid())
+  tripId String
+
+  category       BudgetCategory
+  allocatedMinor Int            @default(0)
+  estimatedMinor Int            @default(0)
+  actualMinor    Int            @default(0)
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, category])
+}
+
+/// A record of what the user did elsewhere. This application never transacts;
+/// it tracks status against an external booking the user completed themselves.
+model Booking {
+  id     String @id @default(cuid())
+  tripId String
+
+  itemId            String?
+  transportOptionId String?
+  lodgingOptionId   String?
+
+  kind        BookingKind
+  provider    String
+  status      BookingStatus @default(NOT_STARTED)
+  reference   String?
+  amountMinor Int?
+  bookedAt    DateTime?
+  documentUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trip             Trip             @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  item             ItineraryItem?   @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  transportOption  TransportOption? @relation(fields: [transportOptionId], references: [id], onDelete: SetNull)
+  lodgingOption    LodgingOption?   @relation(fields: [lodgingOptionId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+}
+
+model TripTask {
+  id     String @id @default(cuid())
+  tripId String
+
+  label         String
+  kind          TaskKind @default(OTHER)
+  dueDate       DateTime? @db.Date
+  isDone        Boolean  @default(false)
+  /// Seeded by the readiness engine from unbooked selections, rather than
+  /// typed by the user.
+  autoGenerated Boolean  @default(false)
+  seq           Int      @default(0)
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+model SavedPlace {
+  id     String @id @default(cuid())
+  userId String
+  poiId  String
+
+  note      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poi  Poi  @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poiId])
+}
+
+// ===========================================================================
+// OBSERVABILITY
+// ===========================================================================
+
+/// Every model call, logged. This table is the source of the report's
+/// "AI output validity" and latency metrics — not an afterthought.
+model LlmCall {
+  id     String  @id @default(cuid())
+  tripId String?
+
+  task          String
+  promptVersion String
+  model         String
+
+  inputTokens  Int?
+  outputTokens Int?
+  latencyMs    Int
+
+  schemaValid    Boolean
+  repairAttempts Int     @default(0)
+  rawResponse    String? @db.Text
+  error          String?
+
+  createdAt DateTime @default(now())
+
+  trip Trip? @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+  @@index([task, promptVersion])
+}
+
+/// Proof that a plan was checked, and a record of what had to be relaxed to
+/// make it feasible. A version with hardCount > 0 must never be presented to
+/// the user as a finished plan.
+model ValidationReport {
+  id            String @id @default(cuid())
+  tripVersionId String @unique
+
+  violations         Json
+  hardCount          Int      @default(0)
+  softCount          Int      @default(0)
+  relaxedConstraints String[]
+
+  createdAt DateTime @default(now())
+
+  tripVersion TripVersion @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+}
+
+model ProviderCache {
+  key      String @id
+  provider String
+  payload  Json
+
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([provider])
+  @@index([expiresAt])
+}
