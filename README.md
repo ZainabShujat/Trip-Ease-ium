@@ -4,8 +4,10 @@ End-to-end trip planning and management: intercity transport, accommodation,
 places, a validated day-by-day itinerary, a budget that adds up, and dynamic
 re-planning when constraints change.
 
-**Current status: Phase 1 — Skeleton & Contracts.** The foundation is in place;
-the planning engine, authentication, dashboard and AI layer are later phases.
+**Current status: Phase 2 — The Engine, Offline.** The deterministic planning
+engine is complete and tested. Authentication, the Trip Dashboard and the AI
+layer are later phases; the site at `/` is still a status page, and becomes the
+product in Phase 4.
 
 ## The governing decision
 
@@ -54,7 +56,7 @@ Runs `typecheck`, `lint` and `test` in sequence. Individually:
 | ------------------- | ----------------------------------------------- |
 | `npm run typecheck` | `tsc --noEmit`, strict plus `noUncheckedIndexedAccess` |
 | `npm run lint`      | ESLint, including the engine-purity rule        |
-| `npm test`          | Vitest, 109 tests                               |
+| `npm test`          | Vitest, 279 tests                               |
 | `npm run build`     | Production build                                |
 | `npm run format`    | Prettier                                        |
 
@@ -76,7 +78,24 @@ tests/            Vitest suites and fixture entry point
 `src/engine` is the project's spine and is kept deliberately pure: an ESLint
 rule forbids it from importing React, Next, Prisma or any provider. It takes
 plain data as arguments and returns plain data, so the optimiser can be tested
-and benchmarked without a server, a database or an API key.
+and benchmarked without a server, a database or an API key. `src/planning` is
+the composition root that calls providers and hands the engine plain data.
+
+### The pipeline
+
+```
+TripBrief → source → score → cluster → route → schedule → budget → validate
+```
+
+Scoring is a weighted multi-objective sum; clustering picks between k-means and
+three documented fallbacks; routing is nearest-neighbour plus 2-opt (provably
+never worse than its seed); scheduling is a greedy interval pass with hard
+constraints absolute and soft constraints relaxed in an explicit order;
+the budget ledger is exact integer arithmetic; and the validation gate is an
+independent check that refuses to return a plan carrying any hard violation.
+
+A plan that cannot be built returns a typed failure — `INFEASIBLE_CONSTRAINTS`,
+`BUDGET_UNREACHABLE`, `NO_CANDIDATES` — never an empty itinerary.
 
 ## Data honesty
 
