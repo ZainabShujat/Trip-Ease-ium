@@ -59,6 +59,7 @@ function googleProvider() {
 }
 
 export const authConfig: NextAuthConfig = {
+  secret: env().AUTH_SECRET,
   // The adapter needs a database. Without one the app still boots and mock
   // planning still works; only sign-in is unavailable, and the UI says so.
   ...(isDatabaseConfigured() ? { adapter: PrismaAdapter(db()) } : {}),
