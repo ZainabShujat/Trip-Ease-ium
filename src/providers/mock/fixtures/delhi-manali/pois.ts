@@ -1,0 +1,366 @@
+import { rupees } from '@/lib/money';
+import type { OpeningHours, Poi, Provenance } from '@/lib/schemas';
+
+/**
+ * Manali points of interest — development fixture.
+ *
+ * See README.md in this directory. Landmark names and coordinates are
+ * approximately real; eateries are fictional; opening hours are typical
+ * values, not verified schedules. Everything here is `mock` provenance and
+ * must never be rendered as live data.
+ */
+
+const MOCK_PROVENANCE: Provenance = {
+  sourceKind: 'mock',
+  provider: 'fixture:delhi-manali',
+  fetchedAt: '2026-01-01T00:00:00+05:30',
+  confidence: 'medium',
+};
+
+const ALL_WEEK: OpeningHours = { kind: 'always' };
+
+/** Same hours every day of the week. */
+function daily(opens: string, closes: string): OpeningHours {
+  return {
+    kind: 'weekly',
+    intervals: [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, opens, closes })),
+    closedWeekdays: [],
+  };
+}
+
+/** Same hours, but shut on the given weekdays (0 = Sunday). */
+function dailyExcept(opens: string, closes: string, closedWeekdays: number[]): OpeningHours {
+  return {
+    kind: 'weekly',
+    intervals: [0, 1, 2, 3, 4, 5, 6]
+      .filter((d) => !closedWeekdays.includes(d))
+      .map((weekday) => ({ weekday, opens, closes })),
+    closedWeekdays,
+  };
+}
+
+type PoiSeed = Omit<Poi, 'provenance' | 'tags' | 'typicalCostPerPersonMinor'> & {
+  tags?: string[];
+  typicalCostPerPersonMinor?: number;
+};
+
+function poi(seed: PoiSeed): Poi {
+  return {
+    ...seed,
+    tags: seed.tags ?? [],
+    typicalCostPerPersonMinor: seed.typicalCostPerPersonMinor ?? 0,
+    provenance: MOCK_PROVENANCE,
+  };
+}
+
+export const MANALI_POIS: Poi[] = [
+  // --- Central Manali ------------------------------------------------------
+  poi({
+    id: 'poi-hadimba',
+    providerRef: 'fixture:manali:hadimba-temple',
+    name: 'Hadimba Devi Temple',
+    category: 'TEMPLE',
+    geo: { lat: 32.2465, lng: 77.1795 },
+    rating: 4.5,
+    reviewCount: 28400,
+    priceLevel: 0,
+    typicalDurationMins: 60,
+    openingHours: daily('08:00', '18:00'),
+    address: 'Hadimba Road, Manali',
+    tags: ['heritage', 'temple', 'cedar forest', 'photography'],
+  }),
+  poi({
+    id: 'poi-manu-temple',
+    providerRef: 'fixture:manali:manu-temple',
+    name: 'Manu Temple',
+    category: 'TEMPLE',
+    geo: { lat: 32.2556, lng: 77.1798 },
+    rating: 4.3,
+    reviewCount: 6100,
+    priceLevel: 0,
+    typicalDurationMins: 45,
+    openingHours: daily('07:00', '18:00'),
+    address: 'Old Manali',
+    tags: ['spiritual', 'temple', 'uphill walk'],
+  }),
+  poi({
+    id: 'poi-tibetan-monastery',
+    providerRef: 'fixture:manali:gadhan-thekchhokling-gompa',
+    name: 'Gadhan Thekchhokling Gompa',
+    category: 'TEMPLE',
+    geo: { lat: 32.2385, lng: 77.188 },
+    rating: 4.4,
+    reviewCount: 4900,
+    priceLevel: 0,
+    typicalDurationMins: 40,
+    openingHours: daily('06:00', '19:00'),
+    address: 'Gompa Road, Manali',
+    tags: ['spiritual', 'buddhist', 'quiet', 'culture'],
+  }),
+  poi({
+    id: 'poi-nyingmapa-temple',
+    providerRef: 'fixture:manali:nyingmapa-temple',
+    name: 'Himalayan Nyingmapa Buddhist Temple',
+    category: 'TEMPLE',
+    geo: { lat: 32.24, lng: 77.187 },
+    rating: 4.3,
+    reviewCount: 2100,
+    priceLevel: 0,
+    typicalDurationMins: 30,
+    openingHours: daily('07:00', '18:00'),
+    tags: ['spiritual', 'buddhist', 'culture'],
+  }),
+  poi({
+    id: 'poi-mall-road',
+    providerRef: 'fixture:manali:mall-road',
+    name: 'Mall Road',
+    category: 'SHOPPING',
+    geo: { lat: 32.2432, lng: 77.1892 },
+    rating: 4.2,
+    reviewCount: 19700,
+    priceLevel: 2,
+    typicalDurationMins: 90,
+    typicalCostPerPersonMinor: rupees(400),
+    openingHours: daily('09:00', '22:00'),
+    address: 'Mall Road, Manali',
+    tags: ['shopping', 'market', 'evening', 'food'],
+  }),
+  poi({
+    id: 'poi-old-manali',
+    providerRef: 'fixture:manali:old-manali',
+    name: 'Old Manali',
+    category: 'MARKET',
+    geo: { lat: 32.253, lng: 77.181 },
+    rating: 4.5,
+    reviewCount: 14200,
+    priceLevel: 2,
+    typicalDurationMins: 120,
+    typicalCostPerPersonMinor: rupees(300),
+    openingHours: daily('09:00', '23:00'),
+    tags: ['cafes', 'shopping', 'nightlife', 'backpacker'],
+  }),
+  poi({
+    id: 'poi-van-vihar',
+    providerRef: 'fixture:manali:van-vihar',
+    name: 'Van Vihar National Park',
+    category: 'NATURE',
+    geo: { lat: 32.2415, lng: 77.1875 },
+    rating: 4.1,
+    reviewCount: 8300,
+    priceLevel: 1,
+    typicalDurationMins: 60,
+    typicalCostPerPersonMinor: rupees(50),
+    openingHours: daily('08:00', '19:00'),
+    address: 'Near Mall Road, Manali',
+    tags: ['nature', 'walk', 'deodar', 'family', 'easy'],
+  }),
+  poi({
+    id: 'poi-club-house',
+    providerRef: 'fixture:manali:club-house',
+    name: 'Manali Club House',
+    category: 'ACTIVITY',
+    geo: { lat: 32.2495, lng: 77.1805 },
+    rating: 3.9,
+    reviewCount: 5600,
+    priceLevel: 1,
+    typicalDurationMins: 75,
+    typicalCostPerPersonMinor: rupees(150),
+    openingHours: dailyExcept('10:00', '18:00', [1]),
+    tags: ['activity', 'family', 'indoor', 'riverside'],
+  }),
+
+  // --- Vashisht & north ----------------------------------------------------
+  poi({
+    id: 'poi-vashisht',
+    providerRef: 'fixture:manali:vashisht-springs',
+    name: 'Vashisht Hot Springs & Temple',
+    category: 'TEMPLE',
+    geo: { lat: 32.2678, lng: 77.1885 },
+    rating: 4.3,
+    reviewCount: 11800,
+    priceLevel: 0,
+    typicalDurationMins: 75,
+    openingHours: daily('06:00', '21:00'),
+    address: 'Vashisht Village',
+    tags: ['spiritual', 'hot springs', 'heritage', 'village'],
+  }),
+  poi({
+    id: 'poi-jogini-falls',
+    providerRef: 'fixture:manali:jogini-falls',
+    name: 'Jogini Falls',
+    category: 'NATURE',
+    geo: { lat: 32.272, lng: 77.193 },
+    rating: 4.4,
+    reviewCount: 7400,
+    priceLevel: 0,
+    typicalDurationMins: 180,
+    openingHours: daily('07:00', '17:00'),
+    tags: ['nature', 'waterfall', 'trekking', 'steep', 'photography'],
+  }),
+  poi({
+    id: 'poi-nehru-kund',
+    providerRef: 'fixture:manali:nehru-kund',
+    name: 'Nehru Kund',
+    category: 'SIGHT',
+    geo: { lat: 32.279, lng: 77.162 },
+    rating: 3.9,
+    reviewCount: 3200,
+    priceLevel: 0,
+    typicalDurationMins: 25,
+    openingHours: ALL_WEEK,
+    tags: ['roadside', 'spring', 'quick stop'],
+  }),
+  poi({
+    id: 'poi-solang',
+    providerRef: 'fixture:manali:solang-valley',
+    name: 'Solang Valley',
+    category: 'ACTIVITY',
+    geo: { lat: 32.317, lng: 77.158 },
+    rating: 4.4,
+    reviewCount: 42600,
+    priceLevel: 3,
+    typicalDurationMins: 240,
+    typicalCostPerPersonMinor: rupees(1500),
+    openingHours: daily('08:00', '18:00'),
+    address: 'Solang Nala, 13 km from Manali',
+    tags: ['adventure', 'paragliding', 'snow', 'ropeway', 'nature', 'photography'],
+  }),
+  poi({
+    id: 'poi-gulaba',
+    providerRef: 'fixture:manali:gulaba',
+    name: 'Gulaba Snow Point',
+    category: 'VIEWPOINT',
+    geo: { lat: 32.34, lng: 77.2 },
+    rating: 4.2,
+    reviewCount: 9100,
+    priceLevel: 1,
+    typicalDurationMins: 120,
+    typicalCostPerPersonMinor: rupees(400),
+    openingHours: daily('07:00', '17:00'),
+    tags: ['snow', 'viewpoint', 'nature', 'photography'],
+  }),
+  poi({
+    id: 'poi-rohtang',
+    providerRef: 'fixture:manali:rohtang-pass',
+    name: 'Rohtang Pass',
+    category: 'VIEWPOINT',
+    geo: { lat: 32.366, lng: 77.247 },
+    rating: 4.5,
+    reviewCount: 38200,
+    priceLevel: 3,
+    typicalDurationMins: 300,
+    typicalCostPerPersonMinor: rupees(1200),
+    // Seasonal and permit-controlled. Modelled as a normal window here; the
+    // permit requirement is carried in `tags` and becomes a TripTask in Phase 4.
+    openingHours: daily('06:00', '15:00'),
+    address: '51 km from Manali on the Leh highway',
+    tags: ['snow', 'high altitude', 'permit required', 'seasonal', 'long drive', 'nature'],
+  }),
+  poi({
+    id: 'poi-beas-kund-trail',
+    providerRef: 'fixture:manali:beas-kund-trailhead',
+    name: 'Beas Kund Trailhead',
+    category: 'NATURE',
+    geo: { lat: 32.32, lng: 77.15 },
+    rating: 4.6,
+    reviewCount: 2400,
+    priceLevel: 0,
+    typicalDurationMins: 300,
+    openingHours: daily('06:00', '16:00'),
+    tags: ['trekking', 'nature', 'strenuous', 'photography'],
+  }),
+
+  // --- Naggar & south ------------------------------------------------------
+  poi({
+    id: 'poi-naggar-castle',
+    providerRef: 'fixture:manali:naggar-castle',
+    name: 'Naggar Castle',
+    category: 'MUSEUM',
+    geo: { lat: 32.118, lng: 77.172 },
+    rating: 4.3,
+    reviewCount: 10500,
+    priceLevel: 1,
+    typicalDurationMins: 90,
+    typicalCostPerPersonMinor: rupees(100),
+    openingHours: daily('09:00', '18:00'),
+    address: 'Naggar, 21 km from Manali',
+    tags: ['heritage', 'culture', 'architecture', 'viewpoint'],
+  }),
+  poi({
+    id: 'poi-roerich-gallery',
+    providerRef: 'fixture:manali:roerich-gallery',
+    name: 'Nicholas Roerich Art Gallery',
+    category: 'MUSEUM',
+    geo: { lat: 32.1128, lng: 77.1735 },
+    rating: 4.4,
+    reviewCount: 3800,
+    priceLevel: 1,
+    typicalDurationMins: 60,
+    typicalCostPerPersonMinor: rupees(150),
+    openingHours: dailyExcept('09:00', '17:00', [1]),
+    address: 'Naggar',
+    tags: ['culture', 'art', 'heritage', 'quiet'],
+  }),
+
+  // --- Eateries (fictional names; see README) ------------------------------
+  poi({
+    id: 'poi-cafe-deodar',
+    providerRef: 'fixture:manali:cafe-deodar',
+    name: 'Deodar & Co.',
+    category: 'CAFE',
+    geo: { lat: 32.2545, lng: 77.1825 },
+    rating: 4.5,
+    reviewCount: 1900,
+    priceLevel: 2,
+    typicalDurationMins: 75,
+    typicalCostPerPersonMinor: rupees(450),
+    openingHours: daily('08:00', '23:00'),
+    address: 'Old Manali',
+    tags: ['cafes', 'breakfast', 'riverside', 'wifi'],
+  }),
+  poi({
+    id: 'poi-cafe-riverstone',
+    providerRef: 'fixture:manali:cafe-riverstone',
+    name: 'Riverstone Coffee House',
+    category: 'CAFE',
+    geo: { lat: 32.2538, lng: 77.1818 },
+    rating: 4.3,
+    reviewCount: 1400,
+    priceLevel: 2,
+    typicalDurationMins: 60,
+    typicalCostPerPersonMinor: rupees(380),
+    openingHours: daily('09:00', '22:30'),
+    address: 'Old Manali',
+    tags: ['cafes', 'coffee', 'terrace', 'nightlife'],
+  }),
+  poi({
+    id: 'poi-restaurant-pine-pepper',
+    providerRef: 'fixture:manali:pine-and-pepper',
+    name: 'Pine & Pepper',
+    category: 'RESTAURANT',
+    geo: { lat: 32.247, lng: 77.1855 },
+    rating: 4.4,
+    reviewCount: 3100,
+    priceLevel: 2,
+    typicalDurationMins: 75,
+    typicalCostPerPersonMinor: rupees(550),
+    openingHours: daily('11:00', '23:00'),
+    address: 'Near Mall Road, Manali',
+    tags: ['food', 'north indian', 'vegetarian options', 'dinner'],
+  }),
+  poi({
+    id: 'poi-restaurant-himalayan-thali',
+    providerRef: 'fixture:manali:himalayan-thali-house',
+    name: 'Himalayan Thali House',
+    category: 'RESTAURANT',
+    geo: { lat: 32.2438, lng: 77.1888 },
+    rating: 4.2,
+    reviewCount: 2600,
+    priceLevel: 1,
+    typicalDurationMins: 60,
+    typicalCostPerPersonMinor: rupees(320),
+    openingHours: daily('08:00', '22:00'),
+    address: 'Mall Road, Manali',
+    tags: ['food', 'himachali', 'vegetarian', 'budget', 'lunch'],
+  }),
+];
