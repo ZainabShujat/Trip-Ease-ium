@@ -144,8 +144,6 @@ export async function createAndPlanTrip(
     ...(form.title ? { title: form.title } : {}),
   });
 
-  await repo.setTripStatus(trip.id, userId, 'PLANNING');
-
   const result = await planTripFromBrief(brief);
   if (isFailure(result)) {
     await repo.setTripStatus(trip.id, userId, 'DRAFT_INVALID');
