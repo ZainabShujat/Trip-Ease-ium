@@ -1,98 +1,94 @@
-import { describeProviders } from '@/providers/registry';
+import { redirect } from 'next/navigation';
+import { SiteHeader } from '@/components/site-header';
+import { ButtonLink, Card } from '@/components/ui';
+import { SetupNotice } from '@/components/setup-notice';
+import { currentUser } from '@/server/auth/guard';
 
 /**
- * Phase 1 status page.
+ * The landing page.
  *
- * Deliberately plain. The Trip Dashboard is the visual centrepiece and it
- * arrives in Phase 4 — shipping a decorative landing page now would be
- * pretending to have a product that does not exist yet. What this page does do
- * is prove the stack boots and state honestly what is and is not built.
+ * Signed-in visitors go straight to their trips — a marketing page is not what
+ * someone who already has an account came for.
  */
-export default function Home() {
-  const { mode, providers } = describeProviders();
+export default async function HomePage() {
+  if (await currentUser()) redirect('/trips');
 
-  const foundations = [
-    { label: 'Next.js 16 · React 19 · TypeScript strict', done: true },
-    { label: 'Domain contracts (Zod schemas, inferred types)', done: true },
-    { label: 'Prisma schema — 21 tables, migration generated', done: true },
-    { label: 'Provider interfaces + deterministic mocks', done: true },
-    { label: 'Delhi → Manali fixture (21 POIs, 6 stays, 7 services)', done: true },
-    { label: 'Whitelisted link builder', done: true },
-    { label: 'Vitest suite', done: true },
-    { label: 'Planning engine — scheduling, budget, validation', done: false },
-    { label: 'Authentication and trip persistence', done: false },
-    { label: 'Trip Dashboard', done: false },
-    { label: 'AI intake and rationale', done: false },
+  const steps = [
+    {
+      title: 'Say where and when',
+      body: 'Origin, dates, party size, budget, and what you actually enjoy.',
+    },
+    {
+      title: 'The planner does the arithmetic',
+      body: 'Transport, a place to stay, and a day-by-day itinerary that respects opening hours, travel times and your budget.',
+    },
+    {
+      title: 'Check it and book',
+      body: 'Every recommendation links out to the provider. Nothing is booked on your behalf.',
+    },
   ];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-10 px-6 py-16">
-      <header className="flex flex-col gap-3">
-        <p className="font-mono text-xs tracking-[0.2em] text-zinc-500 uppercase">
-          Phase 1 — Skeleton &amp; contracts
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">AI Travel Planner</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Foundation for an end-to-end trip planning and management platform. The planning engine is
-          deterministic; the language model interprets and explains but never computes times, prices
-          or links.
-        </p>
-      </header>
+    <>
+      <SiteHeader />
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-mono text-xs tracking-[0.15em] text-zinc-500 uppercase">
-          Build status
-        </h2>
-        <ul className="flex flex-col gap-1.5">
-          {foundations.map((item) => (
-            <li key={item.label} className="flex items-start gap-3 text-sm">
-              <span
-                aria-hidden
-                className={
-                  item.done
-                    ? 'mt-[3px] font-mono text-emerald-600 dark:text-emerald-400'
-                    : 'mt-[3px] font-mono text-zinc-400 dark:text-zinc-600'
-                }
-              >
-                {item.done ? '✓' : '○'}
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-14 px-6 py-16">
+        <section className="flex flex-col gap-5">
+          <p className="text-muted font-mono text-xs tracking-[0.18em] uppercase">
+            Trip planning that adds up
+          </p>
+          <h1 className="max-w-3xl text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl">
+            Plans that respect opening hours, travel time and your actual budget.
+          </h1>
+          <p className="text-ink-soft max-w-2xl text-lg">
+            Tell it you have five days, four people and ₹40,000, and get a complete itinerary — not
+            a wall of suggestions. Every time and every total is computed, then checked. A plan that
+            breaks its own constraints is never shown.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-1">
+            <ButtonLink href="/register">Plan a trip</ButtonLink>
+            <ButtonLink href="/login" variant="secondary">
+              Sign in
+            </ButtonLink>
+          </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-3">
+          {steps.map((step, index) => (
+            <Card key={step.title} className="flex flex-col gap-2">
+              <span className="text-accent font-mono text-xs">
+                {String(index + 1).padStart(2, '0')}
               </span>
-              <span className={item.done ? '' : 'text-zinc-500 dark:text-zinc-500'}>
-                {item.label}
-                {!item.done && <span className="text-zinc-400"> — later phase</span>}
-              </span>
-            </li>
+              <h2 className="font-semibold">{step.title}</h2>
+              <p className="text-ink-soft text-sm">{step.body}</p>
+            </Card>
           ))}
-        </ul>
-      </section>
+        </section>
 
-      <section className="flex flex-col gap-3 rounded border border-amber-300/60 bg-amber-50/60 p-4 dark:border-amber-500/25 dark:bg-amber-950/20">
-        <h2 className="font-mono text-xs tracking-[0.15em] text-amber-700 uppercase dark:text-amber-500">
-          Data source: {mode}
-        </h2>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
-          Every provider below serves deterministic fixture data. Nothing in this application is
-          live availability, and no price shown is a quotation.
-        </p>
-        <ul className="flex flex-wrap gap-2">
-          {providers.map((provider) => (
-            <li
-              key={provider.name}
-              className="rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
-            >
-              {provider.name} · {provider.sourceKind}
-            </li>
-          ))}
-        </ul>
-      </section>
+        {/* Honesty, on the front page rather than buried in a footer. */}
+        <section className="border-flag/40 bg-flag-soft/50 rounded-lg border p-5">
+          <h2 className="text-flag font-mono text-xs tracking-[0.15em] uppercase">
+            About the data
+          </h2>
+          <p className="text-ink-soft mt-2 max-w-3xl text-sm">
+            Transport and accommodation are served from researched sample data, not live
+            availability, because no public booking API exists for Indian bus and rail operators.
+            Prices are realistic ranges, never quotations. Everything you see is labelled with where
+            it came from, and every booking button sends you to the provider to check for yourself.
+          </p>
+        </section>
 
-      <footer className="font-mono text-xs text-zinc-500">
-        <a
-          className="underline underline-offset-4 hover:text-zinc-800 dark:hover:text-zinc-200"
-          href="/api/health"
-        >
-          /api/health
-        </a>
+        <SetupNotice />
+      </main>
+
+      <footer className="border-line border-t px-6 py-6">
+        <div className="text-muted mx-auto flex w-full max-w-5xl justify-between font-mono text-xs">
+          <span>Final-year project</span>
+          <a href="/api/health" className="hover:text-accent">
+            status
+          </a>
+        </div>
       </footer>
-    </main>
+    </>
   );
 }

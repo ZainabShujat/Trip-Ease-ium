@@ -1,26 +1,115 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/**
+ * Design tokens.
+ *
+ * A travel product lives or dies on feeling trustworthy, so the palette is
+ * deliberately calm: a cool paper ground, ink text, one signal teal for
+ * actions, and a rust accent reserved exclusively for provenance warnings
+ * ("estimated", "not live availability"). That reservation matters — if rust
+ * were used decoratively, the one thing it must communicate would stop
+ * registering.
+ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --ground: #f5f6f4;
+  --surface: #ffffff;
+  --surface-alt: #edefec;
+  --ink: #14181b;
+  --ink-soft: #3d4844;
+  --muted: #6b7772;
+  --line: #dce0dc;
+  --line-strong: #c3c9c3;
+  --accent: #0b6e63;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2efec;
+  --flag: #b4531a;
+  --flag-soft: #f6e9df;
+  --ok: #2e7d4f;
+  --warn: #a8720b;
+  --crit: #b3261e;
+  --shadow: 0 1px 2px rgba(20, 24, 27, 0.06), 0 8px 24px -16px rgba(20, 24, 27, 0.28);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme='light']) {
+    --ground: #101413;
+    --surface: #171c1b;
+    --surface-alt: #1d2322;
+    --ink: #e7ebe8;
+    --ink-soft: #bac3be;
+    --muted: #8a948f;
+    --line: #2a312f;
+    --line-strong: #3a4340;
+    --accent: #58d3c0;
+    --accent-ink: #06201c;
+    --accent-soft: #16302c;
+    --flag: #e0904f;
+    --flag-soft: #2e2116;
+    --ok: #6bc48c;
+    --warn: #d6a93f;
+    --crit: #e0776e;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.8);
   }
 }
 
+:root[data-theme='dark'] {
+  --ground: #101413;
+  --surface: #171c1b;
+  --surface-alt: #1d2322;
+  --ink: #e7ebe8;
+  --ink-soft: #bac3be;
+  --muted: #8a948f;
+  --line: #2a312f;
+  --line-strong: #3a4340;
+  --accent: #58d3c0;
+  --accent-ink: #06201c;
+  --accent-soft: #16302c;
+  --flag: #e0904f;
+  --flag-soft: #2e2116;
+  --ok: #6bc48c;
+  --warn: #d6a93f;
+  --crit: #e0776e;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-flag: var(--flag);
+  --color-flag-soft: var(--flag-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-crit: var(--crit);
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+/* Digits that line up in columns — money, times, counts. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
