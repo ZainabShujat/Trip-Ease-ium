@@ -122,64 +122,38 @@ export default async function HomePage() {
         {/* ---------------------------------------------------------------
             Hero: Full-across layout guaranteed to fit viewport on all window sizes
         ---------------------------------------------------------------- */}
-        <section className="relative z-10 flex min-h-[calc(100svh-3.5rem)] lg:h-[calc(100svh-3.5rem)] lg:max-h-[820px] w-full flex-col items-center justify-center px-4 py-8 sm:py-5">
+        <section className="relative z-10 flex min-h-[calc(100svh-3.5rem)] lg:h-[calc(100svh-3.5rem)] lg:max-h-[820px] w-full flex-col items-center justify-center px-4 py-12 sm:py-6">
 
-          {/* Full-width Centered Hero Content */}
-          <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center gap-3 sm:gap-3.5 animate-rise">
+          {/* Full-width Centered Hero Content - Clean & Uncluttered */}
+          <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center gap-5 sm:gap-6 animate-rise">
             <ScrollGlowHeading as="div">
-              <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium shadow-xs backdrop-blur-xs">
+              <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-medium shadow-xs backdrop-blur-xs">
                 <span aria-hidden className="clip-trapezium bg-[#FF3D00] h-2 w-2 animate-pulse" />
-                Unified travel planning across all four dimensions
+                Intelligent Travel Planning
               </span>
             </ScrollGlowHeading>
 
             <HeroTitle />
 
-            <p className="text-ink-soft max-w-xl text-xs sm:text-sm md:text-base leading-relaxed text-balance">
-              From getting there to getting ready, <Wordmark className="text-sm sm:text-base" /> brings your
-              entire trip together in one intelligent plan: transport, stay, places, itinerary
-              and budget, all agreeing with each other.
+            <p className="text-ink-soft max-w-lg text-sm sm:text-base md:text-lg leading-relaxed text-balance">
+              Your entire trip brought together in one intelligent plan.
+              Transport, stays, itinerary, and budget, all agreeing with each other.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1 w-full max-w-xs sm:max-w-none">
-              <ButtonLink href={user ? '/trips/new' : '/register'} size="md" className="w-full sm:w-auto shadow-md">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-xs sm:max-w-none">
+              <ButtonLink href={user ? '/trips/new' : '/register'} size="lg" className="w-full sm:w-auto shadow-md">
                 Plan a trip
               </ButtonLink>
               {user ? (
-                <ButtonLink href="/trips" variant="secondary" size="md" className="w-full sm:w-auto">
+                <ButtonLink href="/trips" variant="secondary" size="lg" className="w-full sm:w-auto">
                   View my trips
                 </ButtonLink>
               ) : (
-                <ButtonLink href="#how-it-works" variant="secondary" size="md" className="w-full sm:w-auto">
+                <ButtonLink href="#how-it-works" variant="secondary" size="lg" className="w-full sm:w-auto">
                   Explore how it works
                 </ButtonLink>
               )}
             </div>
-
-            {/* Quick feature dimension indicators */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-1 text-[10px] sm:text-[10.5px] w-full max-w-xs sm:max-w-none">
-              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
-                <span className="size-1.5 rounded-full bg-sage-deep" />
-                Transport synced
-              </span>
-              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
-                <span className="size-1.5 rounded-full bg-sage-deep" />
-                Stays matched
-              </span>
-              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
-                <span className="size-1.5 rounded-full bg-sage-deep" />
-                Places grouped
-              </span>
-              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
-                <span className="size-1.5 rounded-full bg-[#FF3D00]" />
-                Budget reconciled
-              </span>
-            </div>
-
-            <p className="text-ink-muted text-[11px] sm:text-xs max-w-md">
-              Tell it five days, four people and ₹40,000: it returns a plan that actually adds
-              up, or explains why it cannot.
-            </p>
           </div>
         </section>
 
