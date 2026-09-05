@@ -21,7 +21,7 @@ export function SetupNotice() {
       <div className="border-line bg-surface rounded-lg border px-5 py-4">
         <p className="text-ink-soft text-sm">
           <span className="text-forest font-medium">Accounts are temporarily unavailable.</span> You
-          can still explore how planning works — saving trips will be back shortly.
+          can still explore how planning works: saving trips will be back shortly.
         </p>
       </div>
     );

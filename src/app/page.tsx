@@ -16,7 +16,7 @@ import { currentUser } from '@/server/auth/guard';
  * Rendered per request, always.
  *
  * This page reads the session, so it must never be prerendered. Without this
- * it is only dynamic by accident — when auth happens to be configured at BUILD
+ * it is only dynamic by accident, when auth happens to be configured at BUILD
  * time, `currentUser()` touches headers and Next infers dynamic. Build once
  * without the env vars present and the same page is frozen as static HTML,
  * which then serves a signed-out shell to everyone forever. Stating it
@@ -67,7 +67,7 @@ const JOURNEY = [
   { step: 'We optimise your budget', detail: 'Substitutions that keep the trip inside its total.' },
   {
     step: 'You review and choose',
-    detail: 'Cheapest, balanced or premium — with the reasons why.',
+    detail: 'Cheapest, balanced or premium: with the reasons why.',
   },
   {
     step: 'You book and prepare',
@@ -85,58 +85,69 @@ export default async function HomePage() {
 
       <main className="flex-1">
         {/* ---------------------------------------------------------------
-            Hero — dynamic interactive route experience with traveling beacon
+            Hero: Full-across viewport layout with faded ambient journey background
         ---------------------------------------------------------------- */}
-        <section className="relative flex min-h-[calc(100svh-3.75rem)] items-center overflow-hidden py-8 sm:py-12">
-          {/* Ambient atmosphere behind the text */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="clip-trapezium bg-sage-soft/60 absolute -top-24 -right-24 h-[440px] w-[540px] rotate-6" />
-            <div className="clip-trapezium-down bg-peach-soft/70 absolute -bottom-32 -left-40 h-[320px] w-[480px] -rotate-3" />
-          </div>
+        <section className="relative flex min-h-[calc(100svh-3.75rem)] lg:h-[calc(100svh-3.75rem)] items-center justify-center overflow-hidden px-5 py-10 sm:px-8">
+          {/* Faded Background Journey Trail & Traveling Beacon */}
+          <HeroJourney />
 
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-            <div className="animate-rise flex flex-col items-start gap-5">
-              <span className="border-sage/40 bg-surface text-sage-deep inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-medium shadow-xs">
-                <span aria-hidden className="clip-trapezium bg-sage h-2.5 w-3" />
-                Intelligent end-to-end trip planning
-              </span>
+          {/* Full-width Centered Hero Content */}
+          <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center gap-5 sm:gap-6 animate-rise">
+            <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium shadow-xs backdrop-blur-xs">
+              <span aria-hidden className="clip-trapezium bg-terracotta h-2.5 w-3 animate-pulse" />
+              Unified travel planning across all four dimensions
+            </span>
 
-              <h1 className="text-forest font-serif text-[2.75rem] leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">
-                Plan the whole journey.
-                <span className="text-sage-deep block">Not just the destination.</span>
-              </h1>
+            <h1 className="text-forest font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-balance leading-[1.06] max-w-4xl">
+              Plan the whole journey.
+              <span className="text-sage-deep block sm:inline"> Not just the destination.</span>
+            </h1>
 
-              <p className="text-ink-soft max-w-xl text-lg leading-relaxed">
-                From getting there to getting ready, <Wordmark className="text-lg" /> brings your
-                entire trip together in one intelligent plan — transport, stay, places, itinerary
-                and budget, all agreeing with each other.
-              </p>
+            <p className="text-ink-soft max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed text-balance">
+              From getting there to getting ready, <Wordmark className="text-lg md:text-xl" /> brings your
+              entire trip together in one intelligent plan: transport, stay, places, itinerary
+              and budget, all agreeing with each other.
+            </p>
 
-              <div className="flex flex-wrap items-center gap-3.5 pt-1">
-                <ButtonLink href={user ? '/trips/new' : '/register'} size="lg">
-                  Plan a trip
+            <div className="flex flex-wrap items-center justify-center gap-3.5 pt-1">
+              <ButtonLink href={user ? '/trips/new' : '/register'} size="lg" className="shadow-md">
+                Plan a trip
+              </ButtonLink>
+              {user ? (
+                <ButtonLink href="/trips" variant="secondary" size="lg">
+                  View my trips
                 </ButtonLink>
-                {user ? (
-                  <ButtonLink href="/trips" variant="secondary" size="lg">
-                    View my trips
-                  </ButtonLink>
-                ) : (
-                  <ButtonLink href="#how-it-works" variant="secondary" size="lg">
-                    Explore how it works
-                  </ButtonLink>
-                )}
-              </div>
-
-              <p className="text-ink-muted text-sm">
-                Tell it five days, four people and ₹40,000 — it returns a plan that actually adds
-                up, or explains why it cannot.
-              </p>
+              ) : (
+                <ButtonLink href="#how-it-works" variant="secondary" size="lg">
+                  Explore how it works
+                </ButtonLink>
+              )}
             </div>
 
-            {/* Dynamic Interactive Journey Map Visual */}
-            <div className="relative flex justify-center lg:justify-end">
-              <HeroJourney />
+            {/* Quick feature dimension indicators */}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+                <span className="size-1.5 rounded-full bg-sage-deep" />
+                Transport synced
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+                <span className="size-1.5 rounded-full bg-sage-deep" />
+                Stays matched
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+                <span className="size-1.5 rounded-full bg-sage-deep" />
+                Places grouped
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+                <span className="size-1.5 rounded-full bg-terracotta" />
+                Budget reconciled
+              </span>
             </div>
+
+            <p className="text-ink-muted text-xs sm:text-sm max-w-xl">
+              Tell it five days, four people and ₹40,000: it returns a plan that actually adds
+              up, or explains why it cannot.
+            </p>
           </div>
         </section>
 
@@ -158,14 +169,16 @@ export default async function HomePage() {
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {DIMENSIONS.map(({ Icon, title, lede, body }) => (
-                <Card key={title} interactive className="flex flex-col gap-3">
-                  <span className="bg-sage-soft text-forest grid size-11 place-items-center rounded-md">
-                    <Icon size={22} />
-                  </span>
-                  <div>
-                    <h3 className="text-forest font-serif text-lg font-bold">{title}</h3>
-                    <p className="text-sage-deep text-sm font-medium">{lede}</p>
+                <Card key={title} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sage-deep">
+                      <Icon size={22} />
+                    </span>
+                    <span className="text-ink-muted text-xs font-medium tracking-wide uppercase">
+                      {lede}
+                    </span>
                   </div>
+                  <h3 className="text-forest font-serif text-lg font-bold">{title}</h3>
                   <p className="text-ink-soft text-sm leading-relaxed">{body}</p>
                 </Card>
               ))}
@@ -174,7 +187,7 @@ export default async function HomePage() {
         </section>
 
         {/* ---------------------------------------------------------------
-            The journey — the route line from the mark, at page scale.
+            The journey: the route line from the mark, at page scale.
         ---------------------------------------------------------------- */}
         <section className="relative overflow-hidden">
           <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
@@ -214,7 +227,7 @@ export default async function HomePage() {
         </section>
 
         {/* ---------------------------------------------------------------
-            Closing CTA on a forest band with an angled top edge — the
+            Closing CTA on a forest band with an angled top edge: the
             geometry doing a structural job rather than a decorative one.
         ---------------------------------------------------------------- */}
         <section className="clip-slope-top bg-forest relative">
@@ -224,7 +237,7 @@ export default async function HomePage() {
               Your next trip, planned properly.
             </h2>
             <p className="text-cream/75 max-w-xl">
-              Free to plan. Nothing is booked on your behalf — every recommendation links out to the
+              Free to plan. Nothing is booked on your behalf: every recommendation links out to the
               provider so you stay in control.
             </p>
             <ButtonLink href="/register" size="lg">
@@ -248,7 +261,6 @@ export default async function HomePage() {
           </div>
           <p className="text-ink-muted max-w-sm text-xs leading-relaxed">
             Transport and accommodation figures are researched estimates, not live availability.
-            Confirm with the provider before booking.
           </p>
         </div>
       </footer>

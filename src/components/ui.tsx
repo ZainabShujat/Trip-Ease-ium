@@ -207,7 +207,7 @@ export function StatusBadge({ status }: { status: string }) {
 export function SourceBadge({ sourceKind }: { sourceKind: string }) {
   if (sourceKind === 'live' || sourceKind === 'cached') return <Badge tone="ok">live</Badge>;
   return (
-    <Badge tone="peach" title="Researched estimate — confirm with the provider before booking.">
+    <Badge tone="peach" title="Researched estimate: confirm with the provider before booking.">
       {sourceKind === 'mock' ? 'sample data' : 'estimated'}
     </Badge>
   );

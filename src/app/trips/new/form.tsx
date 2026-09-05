@@ -561,9 +561,9 @@ export function CreateTripForm({ destinations }: { destinations: readonly string
                 value={pace}
                 onChange={(e) => setPace(e.target.value as 'RELAXED' | 'BALANCED' | 'PACKED')}
               >
-                <option value="RELAXED">Relaxed — unhurried, fewer stops</option>
-                <option value="BALANCED">Balanced — sights & leisure</option>
-                <option value="PACKED">Packed — see everything</option>
+                <option value="RELAXED">Relaxed: unhurried, fewer stops</option>
+                <option value="BALANCED">Balanced: sights & leisure</option>
+                <option value="PACKED">Packed: see everything</option>
               </Select>
             </Field>
 
@@ -572,9 +572,9 @@ export function CreateTripForm({ destinations }: { destinations: readonly string
                 value={lodgingTier}
                 onChange={(e) => setLodgingTier(e.target.value as 'BUDGET' | 'MID' | 'PREMIUM')}
               >
-                <option value="BUDGET">Budget — clean & smart</option>
-                <option value="MID">Comfortable — scenic & central</option>
-                <option value="PREMIUM">Premium — resort & luxury</option>
+                <option value="BUDGET">Budget: clean & smart</option>
+                <option value="MID">Comfortable: scenic & central</option>
+                <option value="PREMIUM">Premium: resort & luxury</option>
               </Select>
             </Field>
 

@@ -27,7 +27,7 @@ const serif = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Trip-Ease-ium — Plan the whole journey',
+    default: 'Trip-Ease-ium: Plan the whole journey',
     template: '%s · Trip-Ease-ium',
   },
   description:

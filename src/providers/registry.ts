@@ -39,7 +39,7 @@ export function getProviders(env: EnvLike = process.env): ProviderSet {
     // Phase 5 constructs the Google Places, Routes and affiliate providers
     // here. Until then this is an honest error, not a placeholder that
     // pretends to work.
-    throw new ProviderNotImplementedError('live', 'Phase 5 — Real data');
+    throw new ProviderNotImplementedError('live', 'Phase 5: Real data');
   }
 
   const set = createMockProviders();

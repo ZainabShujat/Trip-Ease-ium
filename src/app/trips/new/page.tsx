@@ -23,7 +23,7 @@ export default async function NewTripPage() {
       <PageHeader
         eyebrow="New trip"
         title="Plan a trip"
-        description="The planner builds a complete day-by-day itinerary, checks it against opening hours and travel times, and keeps it inside your budget — or tells you plainly why it cannot."
+        description="The planner builds a complete day-by-day itinerary, checks it against opening hours and travel times, and keeps it inside your budget, or tells you plainly why it cannot."
       />
 
       {configured ? <CreateTripForm destinations={SUPPORTED_DESTINATIONS} /> : <SetupNotice />}
