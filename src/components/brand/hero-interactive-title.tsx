@@ -10,20 +10,23 @@ export function HeroTitle() {
     const handleScroll = () => {
       if (!h1Ref.current) return;
       const rect = h1Ref.current.getBoundingClientRect();
-      const midScreenY = window.innerHeight * 0.5;
+      const globalArrowY = (window as unknown as { __TEI_ARROW_VIEWPORT_Y__?: number }).__TEI_ARROW_VIEWPORT_Y__;
+      const arrowY = typeof globalArrowY === 'number' ? globalArrowY : window.innerHeight * 0.5;
 
-      // Trigger glow and pulsate when the mid-screen arrow aligns vertically with the title
-      const aligned = midScreenY >= rect.top - 25 && midScreenY <= rect.bottom + 25;
+      // Trigger glow and pulsate when the arrow aligns vertically with the title
+      const aligned = arrowY >= rect.top - 40 && arrowY <= rect.bottom + 40;
       setIsGlow(aligned);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll, { passive: true });
+    window.addEventListener('tei-arrow-scroll', handleScroll, { passive: true });
     handleScroll();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('tei-arrow-scroll', handleScroll);
     };
   }, []);
 

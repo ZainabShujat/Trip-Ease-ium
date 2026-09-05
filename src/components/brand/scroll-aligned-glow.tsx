@@ -19,23 +19,26 @@ export function ScrollGlowHeading({
   const [isAligned, setIsAligned] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
+    const checkAlignment = () => {
       if (!ref.current) return;
       const rect = ref.current.getBoundingClientRect();
-      const midY = window.innerHeight * 0.5;
+      const globalArrowY = (window as unknown as { __TEI_ARROW_VIEWPORT_Y__?: number }).__TEI_ARROW_VIEWPORT_Y__;
+      const arrowY = typeof globalArrowY === 'number' ? globalArrowY : window.innerHeight * 0.5;
 
-      // When the mid-screen arrow aligns vertically with this element (within 40px margin)
-      const aligned = midY >= rect.top - 40 && midY <= rect.bottom + 40;
+      // When the arrow is vertically within this element (with 50px leeway)
+      const aligned = arrowY >= rect.top - 50 && arrowY <= rect.bottom + 50;
       setIsAligned(aligned);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-    handleScroll();
+    window.addEventListener('scroll', checkAlignment, { passive: true });
+    window.addEventListener('resize', checkAlignment, { passive: true });
+    window.addEventListener('tei-arrow-scroll', checkAlignment, { passive: true });
+    checkAlignment();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('scroll', checkAlignment);
+      window.removeEventListener('resize', checkAlignment);
+      window.removeEventListener('tei-arrow-scroll', checkAlignment);
     };
   }, []);
 

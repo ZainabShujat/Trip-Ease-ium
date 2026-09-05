@@ -10,9 +10,9 @@ export function FullPageJourneyPath() {
     yPercent: number;
     angle: number;
   }>({
-    xPercent: 55,
-    yPercent: 8,
-    angle: 155,
+    xPercent: 51,
+    yPercent: 1.5,
+    angle: 125,
   });
 
   useEffect(() => {
@@ -20,73 +20,54 @@ export function FullPageJourneyPath() {
     const container = containerRef.current;
     if (!path || !container) return;
 
-    let totalLength = 1000;
-    try {
-      totalLength = path.getTotalLength();
-    } catch {
-      // Fallback
-    }
-
-    // Pre-sample points along the monotonic curve for instant, accurate scroll tracking
-    const SAMPLES_COUNT = 300;
-    const samples: Array<{ x: number; y: number }> = [];
-    for (let i = 0; i <= SAMPLES_COUNT; i++) {
-      const len = (i / SAMPLES_COUNT) * totalLength;
+    const handleScroll = () => {
+      let totalLength = 1000;
       try {
-        const pt = path.getPointAtLength(len);
-        samples.push({ x: pt.x, y: pt.y });
+        totalLength = path.getTotalLength();
       } catch {
         // Fallback
       }
-    }
 
-    const firstSample = samples[0];
-    if (!firstSample) return;
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const maxScroll = Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        1
+      );
 
-    const handleScroll = () => {
-      const rect = container.getBoundingClientRect();
-      const containerHeight = rect.height || 1;
+      // Exactly 0 at top-most scroll (top corner of line), exactly 1 at bottom-most scroll (bottom corner of line)
+      const progress = Math.min(Math.max(scrollY / maxScroll, 0), 1);
+      const targetLength = progress * totalLength;
 
-      // Exact mid-screen vertically: 50% of viewport height (equal distance from top and bottom)
-      const viewportMidY = window.innerHeight * 0.5;
+      try {
+        const pt = path.getPointAtLength(targetLength);
+        const delta = 2;
+        const ptPrev = path.getPointAtLength(Math.max(targetLength - delta, 0));
+        const ptNext = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
 
-      // Vertical position relative to the container
-      const relativeY = viewportMidY - rect.top;
+        const rect = container.getBoundingClientRect();
+        const containerWidth = rect.width || 1;
+        const containerHeight = rect.height || 1;
 
-      // Clamped normalized ratio along the container
-      const targetRatio = Math.min(Math.max(relativeY / containerHeight, 0.02), 0.98);
-      const targetYInViewBox = targetRatio * 1000; // viewBox is 1000x1000
+        const pixelDx = ((ptNext.x - ptPrev.x) / 1000) * containerWidth;
+        const pixelDy = ((ptNext.y - ptPrev.y) / 1000) * containerHeight;
+        const angleDeg = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) - 90;
 
-      // Find the closest point in Y along the sampled curve
-      let closestIndex = 0;
-      let minDiff = Math.abs(firstSample.y - targetYInViewBox);
-      for (let i = 1; i < samples.length; i++) {
-        const sample = samples[i];
-        if (!sample) continue;
-        const diff = Math.abs(sample.y - targetYInViewBox);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestIndex = i;
-        }
+        const xPercent = pt.x / 10;
+        const yPercent = pt.y / 10;
+
+        setArrowPos({
+          xPercent,
+          yPercent,
+          angle: angleDeg,
+        });
+
+        // Broadcast current viewport Y of arrow for title alignment glow
+        const arrowViewportY = rect.top + (yPercent / 100) * containerHeight;
+        (window as unknown as { __TEI_ARROW_VIEWPORT_Y__?: number }).__TEI_ARROW_VIEWPORT_Y__ = arrowViewportY;
+        window.dispatchEvent(new CustomEvent('tei-arrow-scroll', { detail: { viewportY: arrowViewportY } }));
+      } catch {
+        // Fallback
       }
-
-      const closest = samples[closestIndex] ?? firstSample;
-
-      // Compute tangent angle along the route so the arrow points in the direction of travel
-      const prev = samples[Math.max(closestIndex - 2, 0)] ?? closest;
-      const next = samples[Math.min(closestIndex + 2, samples.length - 1)] ?? closest;
-      const containerWidth = rect.width || 1;
-      const pixelDx = ((next.x - prev.x) / 1000) * containerWidth;
-      const pixelDy = ((next.y - prev.y) / 1000) * containerHeight;
-
-      // Arrow path points upwards (0deg = up), so angle = atan2(pixelDy, pixelDx) in degrees - 90
-      const angleDeg = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) - 90;
-
-      setArrowPos({
-        xPercent: closest.x / 10,
-        yPercent: closest.y / 10,
-        angle: angleDeg,
-      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
