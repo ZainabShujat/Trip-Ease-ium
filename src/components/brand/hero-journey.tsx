@@ -7,6 +7,9 @@ export function FullPageJourneyPath() {
   const pathRef = useRef<SVGPathElement>(null);
   const lastScrollYRef = useRef(0);
   const scrollDirRef = useRef<'down' | 'up'>('down');
+  const targetProgressRef = useRef(0);
+  const currentProgressRef = useRef(0);
+  const currentAngleRef = useRef(180);
 
   const [arrowPos, setArrowPos] = useState<{
     xPercent: number;
@@ -23,14 +26,75 @@ export function FullPageJourneyPath() {
     const container = containerRef.current;
     if (!path || !container) return;
 
-    const handleScroll = () => {
-      let totalLength = 1000;
+    let rafId: number | null = null;
+    let totalLength = 1000;
+    try {
+      totalLength = path.getTotalLength();
+    } catch {
+      // Fallback
+    }
+
+    const updateFrame = () => {
+      // Slow, smooth, luxurious lerp damping
+      const dist = targetProgressRef.current - currentProgressRef.current;
+      if (Math.abs(dist) > 0.0001) {
+        currentProgressRef.current += dist * 0.055;
+      } else {
+        currentProgressRef.current = targetProgressRef.current;
+      }
+
+      const progress = currentProgressRef.current;
+      const targetLength = progress * totalLength;
+
       try {
-        totalLength = path.getTotalLength();
+        const pt = path.getPointAtLength(targetLength);
+        const delta = 4;
+        const pStart = path.getPointAtLength(Math.max(targetLength - delta, 0));
+        const pEnd = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
+
+        const rect = container.getBoundingClientRect();
+        const containerWidth = rect.width || 1;
+        const containerHeight = rect.height || 1;
+
+        const pixelDx = ((pEnd.x - pStart.x) / 1000) * containerWidth;
+        const pixelDy = ((pEnd.y - pStart.y) / 1000) * containerHeight;
+
+        // Tangent parallel to the path:
+        // Downstream (down): pointing along forward travel (+pixelDx, +pixelDy)
+        // Upstream (up): pointing along backward travel (-pixelDx, -pixelDy)
+        // Arrow SVG points North (up) at 0deg. atan2(dy, dx) + 90 rotates tip parallel to vector (dx, dy).
+        const tangentDown = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) + 90;
+        const tangentUp = Math.atan2(-pixelDy, -pixelDx) * (180 / Math.PI) + 90;
+
+        const desiredAngle = scrollDirRef.current === 'down' ? tangentDown : tangentUp;
+
+        // Shortest-path continuous angle unwrapping to prevent 360-degree spin flips
+        let diff = (desiredAngle - currentAngleRef.current) % 360;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        currentAngleRef.current += diff;
+
+        const xPercent = pt.x / 10;
+        const yPercent = pt.y / 10;
+
+        setArrowPos({
+          xPercent,
+          yPercent,
+          angle: currentAngleRef.current,
+        });
+
+        // Broadcast current viewport Y of arrow for title alignment glow
+        const arrowViewportY = rect.top + (yPercent / 100) * containerHeight;
+        (window as unknown as { __TEI_ARROW_VIEWPORT_Y__?: number }).__TEI_ARROW_VIEWPORT_Y__ = arrowViewportY;
+        window.dispatchEvent(new CustomEvent('tei-arrow-scroll', { detail: { viewportY: arrowViewportY } }));
       } catch {
         // Fallback
       }
 
+      rafId = requestAnimationFrame(updateFrame);
+    };
+
+    const handleScroll = () => {
       const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
       const scrollDelta = scrollY - lastScrollYRef.current;
       if (scrollDelta > 0.5) {
@@ -45,43 +109,18 @@ export function FullPageJourneyPath() {
         1
       );
 
-      // Exactly 0 at top-most scroll, exactly 1 at bottom-most scroll
-      const progress = Math.min(Math.max(scrollY / maxScroll, 0), 1);
-      const targetLength = progress * totalLength;
-
-      try {
-        const pt = path.getPointAtLength(targetLength);
-        const rect = container.getBoundingClientRect();
-        const containerHeight = rect.height || 1;
-
-        // When scrolling down, arrow points down (180deg). When scrolling up, arrow points up (0deg).
-        const angleDeg = scrollDirRef.current === 'down' ? 180 : 0;
-
-        const xPercent = pt.x / 10;
-        const yPercent = pt.y / 10;
-
-        setArrowPos({
-          xPercent,
-          yPercent,
-          angle: angleDeg,
-        });
-
-        // Broadcast current viewport Y of arrow for title alignment glow
-        const arrowViewportY = rect.top + (yPercent / 100) * containerHeight;
-        (window as unknown as { __TEI_ARROW_VIEWPORT_Y__?: number }).__TEI_ARROW_VIEWPORT_Y__ = arrowViewportY;
-        window.dispatchEvent(new CustomEvent('tei-arrow-scroll', { detail: { viewportY: arrowViewportY } }));
-      } catch {
-        // Fallback
-      }
+      targetProgressRef.current = Math.min(Math.max(scrollY / maxScroll, 0), 1);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
+    rafId = requestAnimationFrame(updateFrame);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -105,17 +144,17 @@ export function FullPageJourneyPath() {
       >
         <defs>
           <linearGradient id="superLightJourneyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#17382a" stopOpacity="0.30" />
-            <stop offset="25%" stopColor="#2e6b54" stopOpacity="0.35" />
-            <stop offset="55%" stopColor="#ff5722" stopOpacity="0.45" />
-            <stop offset="85%" stopColor="#ff3d00" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#ff9100" stopOpacity="0.65" />
+            <stop offset="0%" stopColor="#17382a" stopOpacity="0.25" />
+            <stop offset="25%" stopColor="#2e6b54" stopOpacity="0.30" />
+            <stop offset="55%" stopColor="#b45309" stopOpacity="0.40" />
+            <stop offset="85%" stopColor="#d97706" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.55" />
           </linearGradient>
         </defs>
 
         {/* Faint Dashed Under-Guide (0.85px, 10% opacity) */}
         <path
-          d="M 510,20 C 730,50 870,90 820,155 C 760,225 460,190 300,220 C 140,250 130,315 230,350 C 340,385 670,325 750,390 C 830,450 820,500 670,530 C 520,560 260,540 180,595 C 100,650 140,705 280,720 C 450,740 830,690 870,770 C 910,850 740,870 600,895 C 440,915 310,935 380,945 C 420,952 460,952 485,948"
+          d="M 510,20 C 720,50 860,95 830,155 C 800,210 520,225 320,240 C 140,255 130,310 220,345 C 310,380 680,385 760,420 C 840,455 830,510 680,545 C 530,580 270,595 190,635 C 110,675 140,715 280,735 C 440,755 820,775 860,820 C 900,865 750,885 610,910 C 450,932 340,944 420,947 C 450,948 475,948 490,948"
           stroke="var(--line-strong)"
           strokeWidth="0.85"
           strokeDasharray="3 6"
@@ -123,36 +162,36 @@ export function FullPageJourneyPath() {
           opacity="0.10"
         />
 
-        {/* Curvy, organic, random adventure route line - ends safely above footer at y=948 */}
+        {/* Curvy, organic, random adventure route line - strictly monotonic downward Y, ends at y=948 above footer */}
         <path
           ref={pathRef}
-          d="M 510,20 C 730,50 870,90 820,155 C 760,225 460,190 300,220 C 140,250 130,315 230,350 C 340,385 670,325 750,390 C 830,450 820,500 670,530 C 520,560 260,540 180,595 C 100,650 140,705 280,720 C 450,740 830,690 870,770 C 910,850 740,870 600,895 C 440,915 310,935 380,945 C 420,952 460,952 485,948"
+          d="M 510,20 C 720,50 860,95 830,155 C 800,210 520,225 320,240 C 140,255 130,310 220,345 C 310,380 680,385 760,420 C 840,455 830,510 680,545 C 530,580 270,595 190,635 C 110,675 140,715 280,735 C 440,755 820,775 860,820 C 900,865 750,885 610,910 C 450,932 340,944 420,947 C 450,948 475,948 490,948"
           stroke="url(#superLightJourneyGrad)"
           strokeWidth="1.15"
           strokeLinecap="round"
           fill="none"
-          className="drop-shadow-[0_0_3px_rgba(255,87,34,0.22)]"
+          className="drop-shadow-[0_0_3px_rgba(217,119,6,0.20)]"
         />
       </svg>
 
-      {/* Directional arrow with smooth 180-deg flip transition between scrolling down and up */}
+      {/* Directional arrow with smooth rotation and slow gliding motion */}
       <div
         style={{
           left: `${arrowPos.xPercent}%`,
           top: `${arrowPos.yPercent}%`,
           transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg)`,
         }}
-        className="pointer-events-none absolute z-40 transition-transform duration-300 ease-out"
+        className="pointer-events-none absolute z-40 transition-transform duration-200 ease-out"
       >
         <div className="relative flex size-9 sm:size-10 items-center justify-center">
-          {/* Luminous outer pulsating neon halo wave */}
-          <span className="absolute inline-flex size-full rounded-full bg-[#FF3D00]/45 animate-ping duration-1000" />
+          {/* Warm golden outer pulsating halo wave */}
+          <span className="absolute inline-flex size-full rounded-full bg-[#F59E0B]/25 animate-ping duration-1000" />
 
-          {/* Radiant neon halo aura */}
-          <span className="absolute inline-flex size-8 sm:size-9 rounded-full bg-[#FF5722]/35 blur-[3px]" />
+          {/* Radiant golden halo aura */}
+          <span className="absolute inline-flex size-8 sm:size-9 rounded-full bg-[#D97706]/20 blur-[3px]" />
 
-          {/* High-visibility Neon Beacon Body */}
-          <div className="relative flex size-6 sm:size-7 items-center justify-center rounded-full bg-gradient-to-br from-[#FF1744] via-[#FF5252] to-[#FF9100] border-2 border-white shadow-[0_0_14px_#FF3D00,0_0_28px_rgba(255,23,68,0.7),0_2px_6px_rgba(0,0,0,0.35)] text-white">
+          {/* High-visibility Warm Golden Beacon Body */}
+          <div className="relative flex size-6 sm:size-7 items-center justify-center rounded-full bg-gradient-to-br from-[#F59E0B] via-[#D97706] to-[#92400E] border-2 border-white shadow-[0_0_12px_rgba(245,158,11,0.65),0_0_24px_rgba(217,119,6,0.35),0_2px_6px_rgba(0,0,0,0.3)] text-white">
             <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
               <path d="M8 1.5 L14 13.5 L8 10.5 L2 13.5 Z" />
             </svg>

@@ -48,7 +48,7 @@ export function ScrollGlowHeading({
       ref={ref}
       className={`transition-all duration-300 ${className} ${
         isAligned
-          ? `tei-glow-active drop-shadow-[0_0_24px_rgba(255,69,0,0.65)] ${activeClassName}`
+          ? `tei-glow-active drop-shadow-[0_0_20px_rgba(217,119,6,0.35)] ${activeClassName}`
           : ''
       }`}
     >

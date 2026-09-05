@@ -128,7 +128,7 @@ export default async function HomePage() {
           <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center gap-5 sm:gap-6 animate-rise">
             <ScrollGlowHeading as="div">
               <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-medium shadow-xs backdrop-blur-xs">
-                <span aria-hidden className="clip-trapezium bg-[#FF3D00] h-2 w-2 animate-pulse" />
+                <span aria-hidden className="clip-trapezium bg-[#D97706] h-2 w-2 animate-pulse" />
                 Intelligent Travel Planning
               </span>
             </ScrollGlowHeading>
@@ -224,7 +224,7 @@ export default async function HomePage() {
                       className={cx(
                         'journey-trapezium-card h-full p-[1.5px] transition-colors duration-300 drop-shadow-[0_2px_8px_rgba(23,42,35,0.06)] group-hover:drop-shadow-[0_6px_16px_rgba(23,42,35,0.12)]',
                         isArrival
-                          ? 'bg-gradient-to-br from-[#FF3D00]/70 via-forest/40 to-[#FF3D00]/80'
+                          ? 'bg-gradient-to-br from-[#D97706]/70 via-forest/40 to-[#D97706]/80'
                           : 'bg-line-strong/60 group-hover:bg-forest/50',
                       )}
                       style={{ clipPath: item.clipPath }}
@@ -234,7 +234,7 @@ export default async function HomePage() {
                         className={cx(
                           'journey-trapezium-card flex h-full flex-col justify-between gap-3 p-4 sm:p-6 transition-colors duration-300',
                           isArrival
-                            ? 'bg-gradient-to-br from-surface via-surface to-[#FF3D00]/[0.06]'
+                            ? 'bg-gradient-to-br from-surface via-surface to-[#D97706]/[0.08]'
                             : 'bg-surface/95 group-hover:bg-surface',
                         )}
                         style={{ clipPath: item.clipPath }}
@@ -245,7 +245,7 @@ export default async function HomePage() {
                               aria-hidden
                               className={cx(
                                 'clip-trapezium grid h-6 w-8 place-items-center text-[11px] font-semibold transition-transform duration-200 group-hover:scale-105',
-                                isArrival ? 'bg-[#FF3D00] text-cream' : 'bg-forest text-cream',
+                                isArrival ? 'bg-[#D97706] text-cream' : 'bg-forest text-cream',
                               )}
                             >
                               {index + 1}
@@ -254,7 +254,7 @@ export default async function HomePage() {
                               <span
                                 className={cx(
                                   'text-xs font-semibold uppercase tracking-wider',
-                                  isArrival ? 'text-[#FF3D00]' : 'text-forest/70',
+                                  isArrival ? 'text-[#D97706]' : 'text-forest/70',
                                 )}
                               >
                                 {item.tag}
