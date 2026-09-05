@@ -119,32 +119,33 @@ export function FullPageJourneyPath() {
       >
         <defs>
           <linearGradient id="superLightJourneyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="var(--forest)" stopOpacity="0.16" />
-            <stop offset="30%" stopColor="var(--sage)" stopOpacity="0.18" />
-            <stop offset="65%" stopColor="var(--sage-deep)" stopOpacity="0.20" />
-            <stop offset="90%" stopColor="var(--terracotta)" stopOpacity="0.24" />
-            <stop offset="100%" stopColor="var(--terracotta)" stopOpacity="0.28" />
+            <stop offset="0%" stopColor="#17382a" stopOpacity="0.30" />
+            <stop offset="25%" stopColor="#2e6b54" stopOpacity="0.35" />
+            <stop offset="55%" stopColor="#ff5722" stopOpacity="0.45" />
+            <stop offset="85%" stopColor="#ff3d00" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#ff9100" stopOpacity="0.65" />
           </linearGradient>
         </defs>
 
-        {/* Faint Dashed Under-Guide (0.75px, 8% opacity) */}
+        {/* Faint Dashed Under-Guide (0.85px, 10% opacity) */}
         <path
-          d="M 650,40 C 450,90 250,130 280,200 C 300,270 750,310 760,390 C 770,470 220,510 220,590 C 220,670 780,710 750,790 C 730,870 530,910 500,965"
+          d="M 510,15 C 730,45 870,85 820,150 C 760,220 460,185 300,215 C 140,245 130,310 230,345 C 340,380 670,320 750,385 C 830,445 820,495 670,525 C 520,555 260,535 180,590 C 100,645 140,700 280,715 C 450,735 830,685 870,765 C 910,845 740,865 600,890 C 440,915 280,940 370,970 C 450,995 540,1000 500,1015"
           stroke="var(--line-strong)"
-          strokeWidth="0.75"
+          strokeWidth="0.85"
           strokeDasharray="3 6"
           fill="none"
-          opacity="0.08"
+          opacity="0.10"
         />
 
-        {/* Super Light & Thin Route Line (0.85px) overlapping all cards and homepage content */}
+        {/* Curvy, organic, random adventure route line with subtle neon glow */}
         <path
           ref={pathRef}
-          d="M 650,40 C 450,90 250,130 280,200 C 300,270 750,310 760,390 C 770,470 220,510 220,590 C 220,670 780,710 750,790 C 730,870 530,910 500,965"
+          d="M 510,15 C 730,45 870,85 820,150 C 760,220 460,185 300,215 C 140,245 130,310 230,345 C 340,380 670,320 750,385 C 830,445 820,495 670,525 C 520,555 260,535 180,590 C 100,645 140,700 280,715 C 450,735 830,685 870,765 C 910,845 740,865 600,890 C 440,915 280,940 370,970 C 450,995 540,1000 500,1015"
           stroke="url(#superLightJourneyGrad)"
-          strokeWidth="0.85"
+          strokeWidth="1.15"
           strokeLinecap="round"
           fill="none"
+          className="drop-shadow-[0_0_3px_rgba(255,87,34,0.22)]"
         />
       </svg>
 
@@ -157,14 +158,17 @@ export function FullPageJourneyPath() {
         }}
         className="pointer-events-none absolute z-40 transition-transform duration-75"
       >
-        <div className="relative flex size-5 items-center justify-center">
-          {/* Subtle pulse halo */}
-          <span className="absolute inline-flex size-full rounded-full bg-terracotta/12 animate-ping" />
-          
-          {/* Minimalist arrow dot */}
-          <div className="relative flex size-4 items-center justify-center rounded-full border border-terracotta/40 bg-surface/95 shadow-xs text-terracotta">
-            <svg viewBox="0 0 16 16" width="8" height="8" fill="currentColor">
-              <path d="M8 2 L13 13 L8 10.5 L3 13 Z" />
+        <div className="relative flex size-9 sm:size-10 items-center justify-center">
+          {/* Luminous outer pulsating neon halo wave */}
+          <span className="absolute inline-flex size-full rounded-full bg-[#FF3D00]/45 animate-ping duration-1000" />
+
+          {/* Radiant neon halo aura */}
+          <span className="absolute inline-flex size-8 sm:size-9 rounded-full bg-[#FF5722]/35 blur-[3px]" />
+
+          {/* High-visibility Neon Beacon Body */}
+          <div className="relative flex size-6 sm:size-7 items-center justify-center rounded-full bg-gradient-to-br from-[#FF1744] via-[#FF5252] to-[#FF9100] border-2 border-white shadow-[0_0_14px_#FF3D00,0_0_28px_rgba(255,23,68,0.7),0_2px_6px_rgba(0,0,0,0.35)] text-white">
+            <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              <path d="M8 1.5 L14 13.5 L8 10.5 L2 13.5 Z" />
             </svg>
           </div>
         </div>

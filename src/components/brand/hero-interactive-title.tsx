@@ -32,17 +32,17 @@ export function HeroTitle() {
       ref={h1Ref}
       className={`text-forest font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-balance leading-[1.1] max-w-3xl transition-all duration-300 ${
         isGlow
-          ? 'drop-shadow-[0_0_24px_rgba(217,111,80,0.6)] scale-[1.015]'
+          ? 'tei-glow-active drop-shadow-[0_0_28px_rgba(255,69,0,0.75)] scale-[1.018]'
           : ''
       }`}
     >
-      <span className={isGlow ? 'animate-pulse text-[#17382a]' : ''}>
+      <span className={isGlow ? 'text-[#143324]' : ''}>
         Plan the whole journey.
       </span>
       <span
         className={`block sm:inline transition-colors duration-300 ${
           isGlow
-            ? 'text-terracotta font-semibold drop-shadow-[0_0_12px_rgba(217,111,80,0.45)]'
+            ? 'text-[#FF3D00] font-bold drop-shadow-[0_0_16px_rgba(255,61,0,0.85)]'
             : 'text-sage-deep'
         }`}
       >

@@ -3,6 +3,7 @@ import { SetupNotice } from '@/components/setup-notice';
 import { TrapeziumMark, Wordmark } from '@/components/brand/logo';
 import { HeroJourney } from '@/components/brand/hero-journey';
 import { HeroTitle } from '@/components/brand/hero-interactive-title';
+import { ScrollGlowHeading } from '@/components/brand/scroll-aligned-glow';
 import {
   BudgetIcon,
   PlacesIcon,
@@ -121,14 +122,16 @@ export default async function HomePage() {
         {/* ---------------------------------------------------------------
             Hero: Full-across layout guaranteed to fit viewport on all window sizes
         ---------------------------------------------------------------- */}
-        <section className="relative z-10 flex h-[calc(100svh-3.5rem)] min-h-[460px] max-h-[820px] w-full flex-col items-center justify-center px-4 py-3 sm:py-5">
+        <section className="relative z-10 flex min-h-[calc(100svh-3.5rem)] lg:h-[calc(100svh-3.5rem)] lg:max-h-[820px] w-full flex-col items-center justify-center px-4 py-8 sm:py-5">
 
           {/* Full-width Centered Hero Content */}
-          <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center gap-2.5 sm:gap-3.5 animate-rise">
-            <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-3 py-0.5 text-[11px] font-medium shadow-xs backdrop-blur-xs">
-              <span aria-hidden className="clip-trapezium bg-terracotta h-2 w-2 animate-pulse" />
-              Unified travel planning across all four dimensions
-            </span>
+          <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center gap-3 sm:gap-3.5 animate-rise">
+            <ScrollGlowHeading as="div">
+              <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium shadow-xs backdrop-blur-xs">
+                <span aria-hidden className="clip-trapezium bg-[#FF3D00] h-2 w-2 animate-pulse" />
+                Unified travel planning across all four dimensions
+              </span>
+            </ScrollGlowHeading>
 
             <HeroTitle />
 
@@ -138,37 +141,37 @@ export default async function HomePage() {
               and budget, all agreeing with each other.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-0.5">
-              <ButtonLink href={user ? '/trips/new' : '/register'} size="md" className="shadow-md">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1 w-full max-w-xs sm:max-w-none">
+              <ButtonLink href={user ? '/trips/new' : '/register'} size="md" className="w-full sm:w-auto shadow-md">
                 Plan a trip
               </ButtonLink>
               {user ? (
-                <ButtonLink href="/trips" variant="secondary" size="md">
+                <ButtonLink href="/trips" variant="secondary" size="md" className="w-full sm:w-auto">
                   View my trips
                 </ButtonLink>
               ) : (
-                <ButtonLink href="#how-it-works" variant="secondary" size="md">
+                <ButtonLink href="#how-it-works" variant="secondary" size="md" className="w-full sm:w-auto">
                   Explore how it works
                 </ButtonLink>
               )}
             </div>
 
             {/* Quick feature dimension indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-0.5 text-[10.5px]">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-1 text-[10px] sm:text-[10.5px] w-full max-w-xs sm:max-w-none">
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-sage-deep" />
                 Transport synced
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-sage-deep" />
                 Stays matched
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-sage-deep" />
                 Places grouped
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
-                <span className="size-1.5 rounded-full bg-terracotta" />
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-surface/80 px-2 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+                <span className="size-1.5 rounded-full bg-[#FF3D00]" />
                 Budget reconciled
               </span>
             </div>
@@ -184,31 +187,33 @@ export default async function HomePage() {
             The four dimensions, framed as what the shape holds.
         ---------------------------------------------------------------- */}
         <section id="how-it-works" className="border-line bg-surface/70 border-y">
-          <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-8 sm:py-20">
             <div className="flex flex-col gap-3">
-              <SectionHeading>Everything inside one shape</SectionHeading>
-              <h2 className="text-forest max-w-2xl font-serif text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+              <ScrollGlowHeading as="div">
+                <SectionHeading>Everything inside one shape</SectionHeading>
+              </ScrollGlowHeading>
+              <ScrollGlowHeading as="h2" className="text-forest max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
                 A trip is four things that have to agree with each other.
-              </h2>
-              <p className="text-ink-soft max-w-2xl">
+              </ScrollGlowHeading>
+              <p className="text-ink-soft max-w-2xl text-sm sm:text-base leading-relaxed">
                 Most planners solve one of these and leave you to reconcile the rest. Change your
                 hotel here and the travel times, the day&rsquo;s order and the budget all follow.
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 sm:mt-10 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {DIMENSIONS.map(({ Icon, title, lede, body }) => (
-                <Card key={title} className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
+                <Card key={title} className="flex flex-col gap-3 p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
                     <span className="text-sage-deep">
-                      <Icon size={22} />
+                      <Icon size={20} />
                     </span>
-                    <span className="text-ink-muted text-xs font-medium tracking-wide uppercase">
+                    <span className="text-ink-muted text-[11px] sm:text-xs font-medium tracking-wide uppercase">
                       {lede}
                     </span>
                   </div>
-                  <h3 className="text-forest font-serif text-lg font-bold">{title}</h3>
-                  <p className="text-ink-soft text-sm leading-relaxed">{body}</p>
+                  <h3 className="text-forest font-serif text-base sm:text-lg font-bold">{title}</h3>
+                  <p className="text-ink-soft text-xs sm:text-sm leading-relaxed">{body}</p>
                 </Card>
               ))}
             </div>
@@ -219,12 +224,14 @@ export default async function HomePage() {
             The journey: the route line from the mark, at page scale.
         ---------------------------------------------------------------- */}
         <section className="relative overflow-hidden">
-          <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+          <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-8 sm:py-20">
             <div className="flex flex-col gap-3">
-              <SectionHeading>How a trip comes together</SectionHeading>
-              <h2 className="text-forest max-w-2xl font-serif text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+              <ScrollGlowHeading as="div">
+                <SectionHeading>How a trip comes together</SectionHeading>
+              </ScrollGlowHeading>
+              <ScrollGlowHeading as="h2" className="text-forest max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
                 One route, from an idea to a departure.
-              </h2>
+              </ScrollGlowHeading>
             </div>
 
             <ol className="mt-8 grid grid-cols-12 gap-3 sm:gap-4">
@@ -238,12 +245,12 @@ export default async function HomePage() {
                       item.colSpan,
                     )}
                   >
-                    {/* Trapezium outer border wrapper with drop shadow */}
+                    {/* Trapezium outer border wrapper with drop shadow and mobile responsive class */}
                     <div
                       className={cx(
-                        'h-full p-[1.5px] transition-colors duration-300 drop-shadow-[0_2px_8px_rgba(23,42,35,0.06)] group-hover:drop-shadow-[0_6px_16px_rgba(23,42,35,0.12)]',
+                        'journey-trapezium-card h-full p-[1.5px] transition-colors duration-300 drop-shadow-[0_2px_8px_rgba(23,42,35,0.06)] group-hover:drop-shadow-[0_6px_16px_rgba(23,42,35,0.12)]',
                         isArrival
-                          ? 'bg-gradient-to-br from-terracotta/60 via-forest/40 to-terracotta/70'
+                          ? 'bg-gradient-to-br from-[#FF3D00]/70 via-forest/40 to-[#FF3D00]/80'
                           : 'bg-line-strong/60 group-hover:bg-forest/50',
                       )}
                       style={{ clipPath: item.clipPath }}
@@ -251,9 +258,9 @@ export default async function HomePage() {
                       {/* Trapezium inner card content */}
                       <div
                         className={cx(
-                          'flex h-full flex-col justify-between gap-3 p-5 sm:p-6 transition-colors duration-300',
+                          'journey-trapezium-card flex h-full flex-col justify-between gap-3 p-4 sm:p-6 transition-colors duration-300',
                           isArrival
-                            ? 'bg-gradient-to-br from-surface via-surface to-terracotta/[0.07]'
+                            ? 'bg-gradient-to-br from-surface via-surface to-[#FF3D00]/[0.06]'
                             : 'bg-surface/95 group-hover:bg-surface',
                         )}
                         style={{ clipPath: item.clipPath }}
@@ -264,7 +271,7 @@ export default async function HomePage() {
                               aria-hidden
                               className={cx(
                                 'clip-trapezium grid h-6 w-8 place-items-center text-[11px] font-semibold transition-transform duration-200 group-hover:scale-105',
-                                isArrival ? 'bg-terracotta text-cream' : 'bg-forest text-cream',
+                                isArrival ? 'bg-[#FF3D00] text-cream' : 'bg-forest text-cream',
                               )}
                             >
                               {index + 1}
@@ -273,7 +280,7 @@ export default async function HomePage() {
                               <span
                                 className={cx(
                                   'text-xs font-semibold uppercase tracking-wider',
-                                  isArrival ? 'text-terracotta' : 'text-forest/70',
+                                  isArrival ? 'text-[#FF3D00]' : 'text-forest/70',
                                 )}
                               >
                                 {item.tag}
@@ -297,12 +304,12 @@ export default async function HomePage() {
             geometry doing a structural job rather than a decorative one.
         ---------------------------------------------------------------- */}
         <section className="clip-slope-top bg-forest relative">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-5 py-20 text-center sm:px-8 sm:py-24">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:px-8 sm:py-24">
             <TrapeziumMark size={64} />
-            <h2 className="text-cream max-w-2xl font-serif text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+            <ScrollGlowHeading as="h2" className="text-cream max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
               Your next trip, planned properly.
-            </h2>
-            <p className="text-cream/75 max-w-xl">
+            </ScrollGlowHeading>
+            <p className="text-cream/75 max-w-xl text-xs sm:text-sm leading-relaxed">
               Free to plan. Nothing is booked on your behalf: every recommendation links out to the
               provider so you stay in control.
             </p>
