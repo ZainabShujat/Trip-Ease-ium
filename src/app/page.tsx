@@ -83,13 +83,14 @@ export default async function HomePage() {
     <>
       <SiteHeader />
 
-      <main className="flex-1">
+      <main className="relative flex-1 overflow-hidden">
+        {/* Full-Page Vertical Journey Path with Scroll-Tracking Location Pin */}
+        <HeroJourney />
+
         {/* ---------------------------------------------------------------
-            Hero: Full-across viewport layout with faded ambient journey background
+            Hero: Full-across viewport layout fitting the viewport
         ---------------------------------------------------------------- */}
-        <section className="relative flex min-h-[calc(100svh-3.75rem)] lg:h-[calc(100svh-3.75rem)] items-center justify-center overflow-hidden px-5 py-10 sm:px-8">
-          {/* Faded Background Journey Trail & Traveling Beacon */}
-          <HeroJourney />
+        <section className="relative z-10 flex min-h-[calc(100svh-3.75rem)] lg:h-[calc(100svh-3.75rem)] items-center justify-center px-5 py-10 sm:px-8">
 
           {/* Full-width Centered Hero Content */}
           <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center gap-5 sm:gap-6 animate-rise">
