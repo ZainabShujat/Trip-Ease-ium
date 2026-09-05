@@ -7,7 +7,6 @@ export function FullPageJourneyPath() {
   const pathRef = useRef<SVGPathElement>(null);
   const lastScrollYRef = useRef(0);
   const scrollDirRef = useRef<'down' | 'up'>('down');
-  const currentAngleRef = useRef(180);
 
   const [arrowPos, setArrowPos] = useState<{
     xPercent: number;
@@ -52,47 +51,11 @@ export function FullPageJourneyPath() {
 
       try {
         const pt = path.getPointAtLength(targetLength);
-        const delta = 5;
-
-        let pStart: DOMPoint;
-        let pEnd: DOMPoint;
-
-        if (scrollDirRef.current === 'down') {
-          // Pointing downstream in the direction of downward travel
-          pStart = path.getPointAtLength(Math.max(targetLength - delta, 0));
-          pEnd = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
-        } else {
-          // Scrolling up: reverse tangent vector so arrow points upstream/upward in direction of travel
-          pStart = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
-          pEnd = path.getPointAtLength(Math.max(targetLength - delta, 0));
-        }
-
         const rect = container.getBoundingClientRect();
-        const containerWidth = rect.width || 1;
         const containerHeight = rect.height || 1;
 
-        const pixelDx = ((pEnd.x - pStart.x) / 1000) * containerWidth;
-        const pixelDy = ((pEnd.y - pStart.y) / 1000) * containerHeight;
-
-        let targetAngle: number;
-        if (scrollDirRef.current === 'down') {
-          // Scrolling down: base angle is 180° (pointing down) with gentle curve bank tilt (±35°)
-          const tilt = Math.atan2(pixelDx, Math.max(pixelDy, 0.1)) * (180 / Math.PI);
-          const clampedTilt = Math.max(-35, Math.min(35, tilt));
-          targetAngle = 180 - clampedTilt;
-        } else {
-          // Scrolling up: base angle is 0° (pointing up) with gentle curve bank tilt (±35°)
-          const tilt = Math.atan2(pixelDx, Math.max(-pixelDy, 0.1)) * (180 / Math.PI);
-          const clampedTilt = Math.max(-35, Math.min(35, tilt));
-          targetAngle = clampedTilt;
-        }
-
-        // Shortest-path continuous angle interpolation to prevent 360-degree spin flips
-        let diff = (targetAngle - currentAngleRef.current) % 360;
-        if (diff > 180) diff -= 360;
-        if (diff < -180) diff += 360;
-        const newAngle = currentAngleRef.current + diff;
-        currentAngleRef.current = newAngle;
+        // When scrolling down, arrow points down (180deg). When scrolling up, arrow points up (0deg).
+        const angleDeg = scrollDirRef.current === 'down' ? 180 : 0;
 
         const xPercent = pt.x / 10;
         const yPercent = pt.y / 10;
@@ -100,7 +63,7 @@ export function FullPageJourneyPath() {
         setArrowPos({
           xPercent,
           yPercent,
-          angle: newAngle,
+          angle: angleDeg,
         });
 
         // Broadcast current viewport Y of arrow for title alignment glow
@@ -172,14 +135,14 @@ export function FullPageJourneyPath() {
         />
       </svg>
 
-      {/* Directional arrow with smooth rotation and position transitions */}
+      {/* Directional arrow with smooth 180-deg flip transition between scrolling down and up */}
       <div
         style={{
           left: `${arrowPos.xPercent}%`,
           top: `${arrowPos.yPercent}%`,
           transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg)`,
         }}
-        className="pointer-events-none absolute z-40 transition-transform duration-200 ease-out"
+        className="pointer-events-none absolute z-40 transition-transform duration-300 ease-out"
       >
         <div className="relative flex size-9 sm:size-10 items-center justify-center">
           {/* Luminous outer pulsating neon halo wave */}
