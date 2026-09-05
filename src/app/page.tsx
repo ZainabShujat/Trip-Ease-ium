@@ -88,29 +88,29 @@ export default async function HomePage() {
         <HeroJourney />
 
         {/* ---------------------------------------------------------------
-            Hero: Full-across viewport layout fitting the viewport
+            Hero: Full-across viewport layout with safe vertical padding across all zooms
         ---------------------------------------------------------------- */}
-        <section className="relative z-10 flex min-h-[calc(100svh-3.75rem)] lg:h-[calc(100svh-3.75rem)] items-center justify-center px-5 py-10 sm:px-8">
+        <section className="relative z-10 flex min-h-[calc(100svh-3.75rem)] flex-col items-center justify-center px-5 pt-8 pb-12 sm:pt-12 sm:pb-16 sm:px-8">
 
           {/* Full-width Centered Hero Content */}
-          <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center gap-5 sm:gap-6 animate-rise">
-            <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium shadow-xs backdrop-blur-xs">
-              <span aria-hidden className="clip-trapezium bg-terracotta h-2.5 w-3 animate-pulse" />
+          <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center gap-4 sm:gap-5 animate-rise">
+            <span className="border-sage/40 bg-surface/85 text-sage-deep inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-medium shadow-xs backdrop-blur-xs">
+              <span aria-hidden className="clip-trapezium bg-terracotta h-2 w-2.5 animate-pulse" />
               Unified travel planning across all four dimensions
             </span>
 
-            <h1 className="text-forest font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-balance leading-[1.06] max-w-4xl">
+            <h1 className="text-forest font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-[1.08] max-w-3xl">
               Plan the whole journey.
               <span className="text-sage-deep block sm:inline"> Not just the destination.</span>
             </h1>
 
-            <p className="text-ink-soft max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed text-balance">
-              From getting there to getting ready, <Wordmark className="text-lg md:text-xl" /> brings your
+            <p className="text-ink-soft max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed text-balance">
+              From getting there to getting ready, <Wordmark className="text-base sm:text-lg" /> brings your
               entire trip together in one intelligent plan: transport, stay, places, itinerary
               and budget, all agreeing with each other.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-3.5 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
               <ButtonLink href={user ? '/trips/new' : '/register'} size="lg" className="shadow-md">
                 Plan a trip
               </ButtonLink>
@@ -126,26 +126,26 @@ export default async function HomePage() {
             </div>
 
             {/* Quick feature dimension indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pt-1 text-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-sage-deep" />
                 Transport synced
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-sage-deep" />
                 Stays matched
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-sage-deep" />
                 Places grouped
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1 font-medium text-forest backdrop-blur-xs shadow-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-2.5 py-0.5 font-medium text-forest backdrop-blur-xs shadow-xs">
                 <span className="size-1.5 rounded-full bg-terracotta" />
                 Budget reconciled
               </span>
             </div>
 
-            <p className="text-ink-muted text-xs sm:text-sm max-w-xl">
+            <p className="text-ink-muted text-xs sm:text-sm max-w-lg">
               Tell it five days, four people and ₹40,000: it returns a plan that actually adds
               up, or explains why it cannot.
             </p>

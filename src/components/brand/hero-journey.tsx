@@ -2,58 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-interface AbstractMilestone {
-  id: string;
-  step: string;
-  title: string;
-  xPercent: number; // 0 to 100%
-  yPercent: number; // 0 to 100%
-}
-
-const PAGE_MILESTONES: AbstractMilestone[] = [
-  {
-    id: 'outbound',
-    step: '01',
-    title: 'Departure & Route',
-    xPercent: 62,
-    yPercent: 7,
-  },
-  {
-    id: 'stays',
-    step: '02',
-    title: 'Curated Stays',
-    xPercent: 28,
-    yPercent: 26,
-  },
-  {
-    id: 'places',
-    step: '03',
-    title: 'Sights & Dining',
-    xPercent: 74,
-    yPercent: 44,
-  },
-  {
-    id: 'budget',
-    step: '04',
-    title: 'Budget & Schedule',
-    xPercent: 26,
-    yPercent: 65,
-  },
-  {
-    id: 'arrival',
-    step: '05',
-    title: 'Destination Ready',
-    xPercent: 50,
-    yPercent: 94,
-  },
-];
-
 export function FullPageJourneyPath() {
   const containerRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
-  const [bubblePos, setBubblePos] = useState<{ xPercent: number; yPercent: number }>({
-    xPercent: 65,
-    yPercent: 6,
+  const [arrowPos, setArrowPos] = useState<{
+    xPercent: number;
+    yPercent: number;
+    angle: number;
+  }>({
+    xPercent: 55,
+    yPercent: 8,
+    angle: 155,
   });
 
   useEffect(() => {
@@ -81,27 +40,25 @@ export function FullPageJourneyPath() {
       }
     }
 
-    if (samples.length === 0) return;
+    const firstSample = samples[0];
+    if (!firstSample) return;
 
     const handleScroll = () => {
       const rect = container.getBoundingClientRect();
       const containerHeight = rect.height || 1;
 
-      // Target position in viewport: keep bubble in comfortable view around 38% from top of screen
-      const viewportTargetY = window.innerHeight * 0.38;
+      // Exact mid-screen vertically: 50% of viewport height (equal distance from top and bottom)
+      const viewportMidY = window.innerHeight * 0.5;
 
-      // Position relative to container
-      const relativeY = viewportTargetY - rect.top;
+      // Vertical position relative to the container
+      const relativeY = viewportMidY - rect.top;
 
-      // Normalized ratio (0 to 1) clamped safely
+      // Clamped normalized ratio along the container
       const targetRatio = Math.min(Math.max(relativeY / containerHeight, 0.02), 0.98);
       const targetYInViewBox = targetRatio * 1000; // viewBox is 1000x1000
 
-      const firstSample = samples[0];
-      if (!firstSample) return;
-
       // Find the closest point in Y along the sampled curve
-      let closest = firstSample;
+      let closestIndex = 0;
       let minDiff = Math.abs(firstSample.y - targetYInViewBox);
       for (let i = 1; i < samples.length; i++) {
         const sample = samples[i];
@@ -109,13 +66,26 @@ export function FullPageJourneyPath() {
         const diff = Math.abs(sample.y - targetYInViewBox);
         if (diff < minDiff) {
           minDiff = diff;
-          closest = sample;
+          closestIndex = i;
         }
       }
 
-      setBubblePos({
+      const closest = samples[closestIndex] ?? firstSample;
+
+      // Compute tangent angle along the route so the arrow points in the direction of travel
+      const prev = samples[Math.max(closestIndex - 2, 0)] ?? closest;
+      const next = samples[Math.min(closestIndex + 2, samples.length - 1)] ?? closest;
+      const containerWidth = rect.width || 1;
+      const pixelDx = ((next.x - prev.x) / 1000) * containerWidth;
+      const pixelDy = ((next.y - prev.y) / 1000) * containerHeight;
+
+      // Arrow path points upwards (0deg = up), so angle = atan2(pixelDy, pixelDx) in degrees - 90
+      const angleDeg = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) - 90;
+
+      setArrowPos({
         xPercent: closest.x / 10,
         yPercent: closest.y / 10,
+        angle: angleDeg,
       });
     };
 
@@ -133,98 +103,69 @@ export function FullPageJourneyPath() {
     <div
       ref={containerRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-20 select-none overflow-hidden"
     >
-      {/* Delicate, faint atmospheric tint washes */}
-      <div className="clip-trapezium bg-sage-soft/18 absolute -top-24 -left-32 h-[500px] w-[600px] -rotate-6 blur-3xl" />
-      <div className="clip-trapezium-down bg-peach-soft/20 absolute top-1/4 -right-36 h-[600px] w-[650px] rotate-12 blur-3xl" />
-      <div className="clip-trapezium bg-sage-soft/15 absolute top-1/2 -left-36 h-[600px] w-[600px] rotate-6 blur-3xl" />
-      <div className="clip-trapezium-down bg-peach-soft/15 absolute top-3/4 -right-32 h-[550px] w-[600px] -rotate-6 blur-3xl" />
+      {/* Soft atmospheric gradient touches */}
+      <div className="clip-trapezium bg-sage-soft/15 absolute -top-24 -left-32 h-[500px] w-[600px] -rotate-6 blur-3xl" />
+      <div className="clip-trapezium-down bg-peach-soft/18 absolute top-1/4 -right-36 h-[600px] w-[650px] rotate-12 blur-3xl" />
+      <div className="clip-trapezium bg-sage-soft/12 absolute top-1/2 -left-36 h-[600px] w-[600px] rotate-6 blur-3xl" />
+      <div className="clip-trapezium-down bg-peach-soft/12 absolute top-3/4 -right-32 h-[550px] w-[600px] -rotate-6 blur-3xl" />
 
-      {/* SVG Canvas with thinner, fader journey line */}
+      {/* SVG Canvas for the translucent journey line overlapping homepage content */}
       <svg
         className="absolute inset-0 h-full w-full"
         viewBox="0 0 1000 1000"
         preserveAspectRatio="none"
       >
         <defs>
-          <linearGradient id="thinVerticalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="var(--forest)" stopOpacity="0.3" />
-            <stop offset="25%" stopColor="var(--sage)" stopOpacity="0.35" />
-            <stop offset="60%" stopColor="var(--sage-deep)" stopOpacity="0.35" />
-            <stop offset="85%" stopColor="var(--terracotta)" stopOpacity="0.45" />
+          <linearGradient id="translucentJourneyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--forest)" stopOpacity="0.32" />
+            <stop offset="30%" stopColor="var(--sage)" stopOpacity="0.36" />
+            <stop offset="65%" stopColor="var(--sage-deep)" stopOpacity="0.38" />
+            <stop offset="90%" stopColor="var(--terracotta)" stopOpacity="0.45" />
             <stop offset="100%" stopColor="var(--terracotta)" stopOpacity="0.5" />
           </linearGradient>
         </defs>
 
-        {/* Very faint elevation contour lines */}
-        <g opacity="0.12" stroke="var(--sage)" strokeWidth="0.8" fill="none">
-          <path d="M-50,110 Q400,80 1050,160" strokeDasharray="4 8" />
-          <path d="M-50,330 Q600,360 1050,290" strokeDasharray="3 7" />
-          <path d="M-50,550 Q350,510 1050,570" strokeDasharray="4 8" />
-          <path d="M-50,760 Q650,790 1050,720" strokeDasharray="3 7" />
-        </g>
-
-        {/* Faint Dashed Guide Line */}
+        {/* Faint Dashed Under-Guide */}
         <path
           d="M 650,40 C 450,90 250,130 280,200 C 300,270 750,310 760,390 C 770,470 220,510 220,590 C 220,670 780,710 750,790 C 730,870 530,910 500,965"
           stroke="var(--line-strong)"
           strokeWidth="1"
           strokeDasharray="3 6"
           fill="none"
-          opacity="0.2"
+          opacity="0.18"
         />
 
-        {/* Thin, Faded Continuous Route Path */}
+        {/* Translucent Fine Route Line overlapping page content */}
         <path
           ref={pathRef}
           d="M 650,40 C 450,90 250,130 280,200 C 300,270 750,310 760,390 C 770,470 220,510 220,590 C 220,670 780,710 750,790 C 730,870 530,910 500,965"
-          stroke="url(#thinVerticalGrad)"
+          stroke="url(#translucentJourneyGrad)"
           strokeWidth="1.5"
           strokeLinecap="round"
           fill="none"
         />
       </svg>
 
-      {/* Faded Abstract Plan Milestones */}
-      {PAGE_MILESTONES.map((m) => (
-        <div
-          key={m.id}
-          style={{ left: `${m.xPercent}%`, top: `${m.yPercent}%` }}
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 z-10"
-        >
-          <div className="flex items-center gap-1.5 rounded-full border border-line/40 bg-surface/50 px-2.5 py-0.5 backdrop-blur-xs opacity-40">
-            <span className="size-1 rounded-full bg-forest/60" />
-            <span className="font-serif text-[10px] font-medium text-forest/80 whitespace-nowrap">
-              {m.title}
-            </span>
-          </div>
-        </div>
-      ))}
-
-      {/* Thinner, Fader Location Bubble Tracking Scroll Realtime */}
+      {/* Sleek directional arrow locked at exact vertical midpoint (50vh) of the viewport */}
       <div
         style={{
-          left: `${bubblePos.xPercent}%`,
-          top: `${bubblePos.yPercent}%`,
+          left: `${arrowPos.xPercent}%`,
+          top: `${arrowPos.yPercent}%`,
+          transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg)`,
         }}
-        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 z-20"
+        className="pointer-events-none absolute z-30 transition-transform duration-75"
       >
-        <div className="flex flex-col items-center gap-0.5">
-          {/* Subtle translucent pill tag */}
-          <span className="inline-flex items-center gap-1 rounded-full border border-terracotta/25 bg-surface/75 px-2 py-0.5 text-[8.5px] font-mono font-medium tracking-wider text-terracotta/80 uppercase shadow-xs backdrop-blur-xs whitespace-nowrap opacity-85">
-            <span className="size-1 rounded-full bg-terracotta animate-pulse" />
-            Route
-          </span>
-
-          {/* Delicate Mini Location Indicator */}
-          <div className="relative flex size-5 items-center justify-center">
-            {/* Faint pulsing wave */}
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-terracotta/20" />
-            {/* Subtle outer halo */}
-            <span className="relative flex size-3.5 items-center justify-center rounded-full border border-terracotta/50 bg-surface/90 shadow-xs">
-              <span className="size-1.5 rounded-full bg-terracotta" />
-            </span>
+        <div className="relative flex size-6 items-center justify-center">
+          {/* Faint ambient pulse halo */}
+          <span className="absolute inline-flex size-full rounded-full bg-terracotta/15 animate-ping" />
+          
+          {/* Sleek minimalist arrow badge */}
+          <div className="relative flex size-5 items-center justify-center rounded-full border border-terracotta/50 bg-surface/90 shadow-sm backdrop-blur-xs text-terracotta">
+            <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor">
+              <path d="M8 1.5 L13.5 13.5 L8 10.5 L2.5 13.5 Z" />
+            </svg>
           </div>
         </div>
       </div>
