@@ -5,14 +5,18 @@ import { useEffect, useRef, useState } from 'react';
 export function FullPageJourneyPath() {
   const containerRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
+  const lastScrollYRef = useRef(0);
+  const scrollDirRef = useRef<'down' | 'up'>('down');
+  const currentAngleRef = useRef(180);
+
   const [arrowPos, setArrowPos] = useState<{
     xPercent: number;
     yPercent: number;
     angle: number;
   }>({
     xPercent: 51,
-    yPercent: 1.5,
-    angle: 125,
+    yPercent: 2,
+    angle: 180, // Facing downwards initially
   });
 
   useEffect(() => {
@@ -29,28 +33,57 @@ export function FullPageJourneyPath() {
       }
 
       const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const scrollDelta = scrollY - lastScrollYRef.current;
+      if (scrollDelta > 0.5) {
+        scrollDirRef.current = 'down';
+      } else if (scrollDelta < -0.5) {
+        scrollDirRef.current = 'up';
+      }
+      lastScrollYRef.current = scrollY;
+
       const maxScroll = Math.max(
         document.documentElement.scrollHeight - window.innerHeight,
         1
       );
 
-      // Exactly 0 at top-most scroll (top corner of line), exactly 1 at bottom-most scroll (bottom corner of line)
+      // Exactly 0 at top-most scroll, exactly 1 at bottom-most scroll
       const progress = Math.min(Math.max(scrollY / maxScroll, 0), 1);
       const targetLength = progress * totalLength;
 
       try {
         const pt = path.getPointAtLength(targetLength);
-        const delta = 2;
-        const ptPrev = path.getPointAtLength(Math.max(targetLength - delta, 0));
-        const ptNext = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
+        const delta = 5;
+
+        let pStart: DOMPoint;
+        let pEnd: DOMPoint;
+
+        if (scrollDirRef.current === 'down') {
+          // Pointing downstream in the direction of downward travel
+          pStart = path.getPointAtLength(Math.max(targetLength - delta, 0));
+          pEnd = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
+        } else {
+          // Scrolling up: reverse tangent vector so arrow points upstream/upward in direction of travel
+          pStart = path.getPointAtLength(Math.min(targetLength + delta, totalLength));
+          pEnd = path.getPointAtLength(Math.max(targetLength - delta, 0));
+        }
 
         const rect = container.getBoundingClientRect();
         const containerWidth = rect.width || 1;
         const containerHeight = rect.height || 1;
 
-        const pixelDx = ((ptNext.x - ptPrev.x) / 1000) * containerWidth;
-        const pixelDy = ((ptNext.y - ptPrev.y) / 1000) * containerHeight;
-        const angleDeg = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) - 90;
+        const pixelDx = ((pEnd.x - pStart.x) / 1000) * containerWidth;
+        const pixelDy = ((pEnd.y - pStart.y) / 1000) * containerHeight;
+
+        // Arrow icon tip is at top (north) in SVG viewBox at 0deg
+        // Tangent along vector (pixelDx, pixelDy) is: atan2(pixelDy, pixelDx) + 90
+        const rawAngle = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) + 90;
+
+        // Shortest-path continuous angle interpolation to prevent 360-degree spin flips
+        let diff = (rawAngle - currentAngleRef.current) % 360;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        const newAngle = currentAngleRef.current + diff;
+        currentAngleRef.current = newAngle;
 
         const xPercent = pt.x / 10;
         const yPercent = pt.y / 10;
@@ -58,7 +91,7 @@ export function FullPageJourneyPath() {
         setArrowPos({
           xPercent,
           yPercent,
-          angle: angleDeg,
+          angle: newAngle,
         });
 
         // Broadcast current viewport Y of arrow for title alignment glow
@@ -84,7 +117,7 @@ export function FullPageJourneyPath() {
     <div
       ref={containerRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-30 select-none overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-30 select-none"
     >
       {/* Whisper-soft ambient background gradients */}
       <div className="clip-trapezium bg-sage-soft/10 absolute -top-24 -left-32 h-[500px] w-[600px] -rotate-6 blur-3xl" />
@@ -110,7 +143,7 @@ export function FullPageJourneyPath() {
 
         {/* Faint Dashed Under-Guide (0.85px, 10% opacity) */}
         <path
-          d="M 510,15 C 730,45 870,85 820,150 C 760,220 460,185 300,215 C 140,245 130,310 230,345 C 340,380 670,320 750,385 C 830,445 820,495 670,525 C 520,555 260,535 180,590 C 100,645 140,700 280,715 C 450,735 830,685 870,765 C 910,845 740,865 600,890 C 440,915 280,940 370,970 C 450,995 540,1000 500,1015"
+          d="M 510,20 C 730,50 870,90 820,155 C 760,225 460,190 300,220 C 140,250 130,315 230,350 C 340,385 670,325 750,390 C 830,450 820,500 670,530 C 520,560 260,540 180,595 C 100,650 140,705 280,720 C 450,740 830,690 870,770 C 910,850 740,870 600,895 C 440,915 310,935 380,945 C 420,952 460,952 485,948"
           stroke="var(--line-strong)"
           strokeWidth="0.85"
           strokeDasharray="3 6"
@@ -118,10 +151,10 @@ export function FullPageJourneyPath() {
           opacity="0.10"
         />
 
-        {/* Curvy, organic, random adventure route line with subtle neon glow */}
+        {/* Curvy, organic, random adventure route line - ends safely above footer at y=948 */}
         <path
           ref={pathRef}
-          d="M 510,15 C 730,45 870,85 820,150 C 760,220 460,185 300,215 C 140,245 130,310 230,345 C 340,380 670,320 750,385 C 830,445 820,495 670,525 C 520,555 260,535 180,590 C 100,645 140,700 280,715 C 450,735 830,685 870,765 C 910,845 740,865 600,890 C 440,915 280,940 370,970 C 450,995 540,1000 500,1015"
+          d="M 510,20 C 730,50 870,90 820,155 C 760,225 460,190 300,220 C 140,250 130,315 230,350 C 340,385 670,325 750,390 C 830,450 820,500 670,530 C 520,560 260,540 180,595 C 100,650 140,705 280,720 C 450,740 830,690 870,770 C 910,850 740,870 600,895 C 440,915 310,935 380,945 C 420,952 460,952 485,948"
           stroke="url(#superLightJourneyGrad)"
           strokeWidth="1.15"
           strokeLinecap="round"
@@ -130,14 +163,14 @@ export function FullPageJourneyPath() {
         />
       </svg>
 
-      {/* Directional arrow locked at vertical midpoint (50vh) of viewport */}
+      {/* Directional arrow with smooth rotation and position transitions */}
       <div
         style={{
           left: `${arrowPos.xPercent}%`,
           top: `${arrowPos.yPercent}%`,
           transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg)`,
         }}
-        className="pointer-events-none absolute z-40 transition-transform duration-75"
+        className="pointer-events-none absolute z-40 transition-transform duration-200 ease-out"
       >
         <div className="relative flex size-9 sm:size-10 items-center justify-center">
           {/* Luminous outer pulsating neon halo wave */}
