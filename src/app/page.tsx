@@ -6,11 +6,10 @@ import { HeroTitle } from '@/components/brand/hero-interactive-title';
 import {
   BudgetIcon,
   PlacesIcon,
-  RouteLine,
   StayIcon,
   TransportIcon,
 } from '@/components/brand/icons';
-import { ButtonLink, Card, SectionHeading } from '@/components/ui';
+import { ButtonLink, Card, SectionHeading, cx } from '@/components/ui';
 import { currentUser } from '@/server/auth/guard';
 
 /**
@@ -62,19 +61,50 @@ const DIMENSIONS = [
 ] as const;
 
 const JOURNEY = [
-  { step: 'Tell us about your trip', detail: 'Where, when, who, and what you have to spend.' },
-  { step: 'We find your options', detail: 'Transport, places to stay, and things worth doing.' },
-  { step: 'We build your itinerary', detail: 'Opening hours, travel times and meals, on a clock.' },
-  { step: 'We optimise your budget', detail: 'Substitutions that keep the trip inside its total.' },
+  {
+    step: 'Tell us about your trip',
+    detail: 'Where, when, who, and what you have to spend.',
+    colSpan: 'col-span-12 sm:col-span-12 lg:col-span-5',
+    clipPath: 'polygon(0% 0%, calc(100% - 16px) 0%, 100% 100%, 0% 100%)',
+    tag: 'departure',
+  },
+  {
+    step: 'We find your options',
+    detail: 'Transport, places to stay, and things worth doing.',
+    colSpan: 'col-span-12 sm:col-span-6 lg:col-span-3',
+    clipPath: 'polygon(14px 0%, calc(100% - 14px) 0%, 100% 100%, 0% 100%)',
+  },
+  {
+    step: 'We build your itinerary',
+    detail: 'Opening hours, travel times and meals, on a clock.',
+    colSpan: 'col-span-12 sm:col-span-6 lg:col-span-4',
+    clipPath: 'polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)',
+  },
+  {
+    step: 'We optimise your budget',
+    detail: 'Substitutions that keep the trip inside its total.',
+    colSpan: 'col-span-12 sm:col-span-6 lg:col-span-3',
+    clipPath: 'polygon(0% 0%, calc(100% - 14px) 0%, 100% 100%, 0% 100%)',
+  },
   {
     step: 'You review and choose',
     detail: 'Cheapest, balanced or premium: with the reasons why.',
+    colSpan: 'col-span-12 sm:col-span-6 lg:col-span-3',
+    clipPath: 'polygon(14px 0%, calc(100% - 14px) 0%, 100% 100%, 0% 100%)',
   },
   {
     step: 'You book and prepare',
     detail: 'Links to the provider, and a checklist of what is left.',
+    colSpan: 'col-span-12 sm:col-span-6 lg:col-span-3',
+    clipPath: 'polygon(14px 0%, calc(100% - 14px) 0%, 100% 100%, 0% 100%)',
   },
-  { step: 'You travel', detail: 'The whole plan in your pocket, day by day.' },
+  {
+    step: 'You travel',
+    detail: 'The whole plan in your pocket, day by day.',
+    colSpan: 'col-span-12 sm:col-span-6 lg:col-span-3',
+    clipPath: 'polygon(14px 0%, 100% 0%, 100% 100%, 0% 100%)',
+    tag: 'arrival',
+  },
 ] as const;
 
 export default async function HomePage() {
@@ -197,30 +227,67 @@ export default async function HomePage() {
               </h2>
             </div>
 
-            <RouteLine
-              variant="climb"
-              animated
-              className="text-sage mt-8 hidden h-16 w-full lg:block"
-            />
-
-            <ol className="border-line bg-line mt-8 grid gap-px overflow-hidden rounded-lg border sm:grid-cols-2 lg:grid-cols-4">
-              {JOURNEY.map((item, index) => (
-                <li key={item.step} className="bg-surface flex flex-col gap-2 p-5">
-                  <span className="flex items-center gap-2">
-                    <span
-                      aria-hidden
-                      className="clip-trapezium bg-forest text-cream grid h-6 w-8 place-items-center text-[11px] font-semibold"
-                    >
-                      {index + 1}
-                    </span>
-                    {index === JOURNEY.length - 1 && (
-                      <span className="text-terracotta text-xs font-medium">arrival</span>
+            <ol className="mt-8 grid grid-cols-12 gap-3 sm:gap-4">
+              {JOURNEY.map((item, index) => {
+                const isArrival = index === JOURNEY.length - 1;
+                return (
+                  <li
+                    key={item.step}
+                    className={cx(
+                      'group relative h-full transition-all duration-300 hover:-translate-y-1',
+                      item.colSpan,
                     )}
-                  </span>
-                  <h3 className="text-forest font-medium">{item.step}</h3>
-                  <p className="text-ink-soft text-sm leading-relaxed">{item.detail}</p>
-                </li>
-              ))}
+                  >
+                    {/* Trapezium outer border wrapper with drop shadow */}
+                    <div
+                      className={cx(
+                        'h-full p-[1.5px] transition-colors duration-300 drop-shadow-[0_2px_8px_rgba(23,42,35,0.06)] group-hover:drop-shadow-[0_6px_16px_rgba(23,42,35,0.12)]',
+                        isArrival
+                          ? 'bg-gradient-to-br from-terracotta/60 via-forest/40 to-terracotta/70'
+                          : 'bg-line-strong/60 group-hover:bg-forest/50',
+                      )}
+                      style={{ clipPath: item.clipPath }}
+                    >
+                      {/* Trapezium inner card content */}
+                      <div
+                        className={cx(
+                          'flex h-full flex-col justify-between gap-3 p-5 sm:p-6 transition-colors duration-300',
+                          isArrival
+                            ? 'bg-gradient-to-br from-surface via-surface to-terracotta/[0.07]'
+                            : 'bg-surface/95 group-hover:bg-surface',
+                        )}
+                        style={{ clipPath: item.clipPath }}
+                      >
+                        <div className="flex flex-col gap-2.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              aria-hidden
+                              className={cx(
+                                'clip-trapezium grid h-6 w-8 place-items-center text-[11px] font-semibold transition-transform duration-200 group-hover:scale-105',
+                                isArrival ? 'bg-terracotta text-cream' : 'bg-forest text-cream',
+                              )}
+                            >
+                              {index + 1}
+                            </span>
+                            {'tag' in item && item.tag && (
+                              <span
+                                className={cx(
+                                  'text-xs font-semibold uppercase tracking-wider',
+                                  isArrival ? 'text-terracotta' : 'text-forest/70',
+                                )}
+                              >
+                                {item.tag}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-forest font-medium text-base sm:text-lg">{item.step}</h3>
+                        </div>
+                        <p className="text-ink-soft text-xs sm:text-sm leading-relaxed">{item.detail}</p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </div>
         </section>
