@@ -74,12 +74,21 @@ export function FullPageJourneyPath() {
         const pixelDx = ((pEnd.x - pStart.x) / 1000) * containerWidth;
         const pixelDy = ((pEnd.y - pStart.y) / 1000) * containerHeight;
 
-        // Arrow icon tip is at top (north) in SVG viewBox at 0deg
-        // Tangent along vector (pixelDx, pixelDy) is: atan2(pixelDy, pixelDx) + 90
-        const rawAngle = Math.atan2(pixelDy, pixelDx) * (180 / Math.PI) + 90;
+        let targetAngle: number;
+        if (scrollDirRef.current === 'down') {
+          // Scrolling down: base angle is 180° (pointing down) with gentle curve bank tilt (±35°)
+          const tilt = Math.atan2(pixelDx, Math.max(pixelDy, 0.1)) * (180 / Math.PI);
+          const clampedTilt = Math.max(-35, Math.min(35, tilt));
+          targetAngle = 180 - clampedTilt;
+        } else {
+          // Scrolling up: base angle is 0° (pointing up) with gentle curve bank tilt (±35°)
+          const tilt = Math.atan2(pixelDx, Math.max(-pixelDy, 0.1)) * (180 / Math.PI);
+          const clampedTilt = Math.max(-35, Math.min(35, tilt));
+          targetAngle = clampedTilt;
+        }
 
         // Shortest-path continuous angle interpolation to prevent 360-degree spin flips
-        let diff = (rawAngle - currentAngleRef.current) % 360;
+        let diff = (targetAngle - currentAngleRef.current) % 360;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
         const newAngle = currentAngleRef.current + diff;
