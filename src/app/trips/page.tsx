@@ -1,26 +1,28 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Badge, BudgetBar, ButtonLink, Card, EmptyState, PageHeader } from '@/components/ui';
-import { formatMoney } from '@/lib/money';
+import { EmptyTripIllustration } from '@/components/brand/empty-illustration';
+import { CalendarIcon, TravellersIcon } from '@/components/brand/icons';
 import { SetupNotice } from '@/components/setup-notice';
+import {
+  BudgetBar,
+  ButtonLink,
+  Card,
+  EmptyState,
+  PageHeader,
+  SectionHeading,
+  StatusBadge,
+} from '@/components/ui';
+import { formatMoney } from '@/lib/money';
 import { currentUser, isAuthConfigured } from '@/server/auth/guard';
 import { listTrips } from '@/server/trips/service';
+
+/** Reads the session, so it is rendered per request and never prerendered. */
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'My trips' };
 
 type TripSummary = Awaited<ReturnType<typeof listTrips>>['upcoming'][number];
-
-const STATUS_TONE = {
-  PLANNED: 'ok',
-  BOOKING: 'accent',
-  TRAVELLING: 'accent',
-  COMPLETED: 'neutral',
-  DRAFT: 'neutral',
-  PLANNING: 'neutral',
-  DRAFT_INVALID: 'crit',
-  CANCELLED: 'neutral',
-} as const;
 
 function formatDateRange(start: string, end: string): string {
   const fmt = (iso: string, withYear: boolean) =>
@@ -36,41 +38,61 @@ function formatDateRange(start: string, end: string): string {
 
 function TripCard({ trip }: { trip: TripSummary }) {
   const planned = trip.estimatedMinor > 0;
+  const over = trip.estimatedMinor > trip.budgetTotalMinor;
+
   return (
-    <Link href={`/trips/${trip.id}`} className="group block">
-      <Card className="group-hover:border-accent flex flex-col gap-3 transition-colors">
+    <Link href={`/trips/${trip.id}`} className="group block rounded-lg">
+      <Card interactive className="flex h-full flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="group-hover:text-accent font-semibold tracking-tight">{trip.title}</h3>
-            <p className="text-muted text-sm">{formatDateRange(trip.startDate, trip.endDate)}</p>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-forest group-hover:text-sage-deep font-serif text-lg font-bold transition-colors">
+              {trip.title}
+            </h3>
+            <p className="text-ink-muted text-sm">{trip.destinationCity}</p>
           </div>
-          <Badge tone={STATUS_TONE[trip.status] ?? 'neutral'}>
-            {trip.status.replace('_', ' ').toLowerCase()}
-          </Badge>
+          <StatusBadge status={trip.status} />
         </div>
 
-        <div className="flex items-baseline justify-between gap-3 text-sm">
-          <span className="text-ink-soft">
-            {trip.travellerCount} {trip.travellerCount === 1 ? 'traveller' : 'travellers'}
-          </span>
-          <span className="tabular text-ink-soft">
+        <dl className="text-ink-soft flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          <div className="flex items-center gap-1.5">
+            <dt className="sr-only">Dates</dt>
+            <CalendarIcon size={15} className="text-sage-deep" />
+            <dd className="tabular">{formatDateRange(trip.startDate, trip.endDate)}</dd>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <dt className="sr-only">Travellers</dt>
+            <TravellersIcon size={15} className="text-sage-deep" />
+            <dd className="tabular">
+              {trip.travellerCount} {trip.travellerCount === 1 ? 'traveller' : 'travellers'}
+            </dd>
+          </div>
+        </dl>
+
+        <div className="border-line mt-auto flex flex-col gap-2 border-t pt-3">
+          <p className="tabular flex items-baseline justify-between text-sm">
             {planned ? (
               <>
-                <span className="text-ink font-medium">
+                <span className="text-forest font-semibold">
                   {formatMoney(trip.estimatedMinor, trip.currency)}
                 </span>
-                {' / '}
-                {formatMoney(trip.budgetTotalMinor, trip.currency)}
+                <span className="text-ink-muted">
+                  of {formatMoney(trip.budgetTotalMinor, trip.currency)}
+                </span>
               </>
             ) : (
-              <>Budget {formatMoney(trip.budgetTotalMinor, trip.currency)}</>
+              <>
+                <span className="text-ink-soft">Not planned yet</span>
+                <span className="text-ink-muted">
+                  {formatMoney(trip.budgetTotalMinor, trip.currency)} budget
+                </span>
+              </>
             )}
-          </span>
+          </p>
+          {planned && (
+            <BudgetBar estimatedMinor={trip.estimatedMinor} budgetMinor={trip.budgetTotalMinor} />
+          )}
+          {over && <p className="text-terracotta-deep text-xs font-medium">Over budget</p>}
         </div>
-
-        {planned && (
-          <BudgetBar estimatedMinor={trip.estimatedMinor} budgetMinor={trip.budgetTotalMinor} />
-        )}
       </Card>
     </Link>
   );
@@ -93,31 +115,38 @@ export default async function TripsPage() {
   if (!user) redirect('/login');
 
   const { upcoming, past } = await listTrips(user.id);
+  const total = upcoming.length + past.length;
 
   return (
     <>
       <PageHeader
+        eyebrow="Your journeys"
         title="My trips"
         description={
-          upcoming.length + past.length === 0
+          total === 0
             ? undefined
-            : `${upcoming.length} upcoming, ${past.length} past.`
+            : `${upcoming.length} upcoming · ${past.length} ${past.length === 1 ? 'past trip' : 'past trips'}`
         }
         actions={<ButtonLink href="/trips/new">Plan a trip</ButtonLink>}
       />
 
-      {upcoming.length === 0 && past.length === 0 ? (
+      {total === 0 ? (
         <EmptyState
-          title="No trips yet"
-          description="Tell the planner where you want to go, when, and what you have to spend. It will build a complete day-by-day itinerary you can check and adjust."
-          action={<ButtonLink href="/trips/new">Plan your first trip</ButtonLink>}
+          illustration={<EmptyTripIllustration className="w-52 max-w-full" />}
+          title="Your next adventure starts here"
+          description="Tell the planner where you want to go, when, and what you have to spend. It builds a complete day-by-day itinerary you can check, adjust and book."
+          action={
+            <ButtonLink href="/trips/new" size="lg">
+              Plan your first trip
+            </ButtonLink>
+          }
         />
       ) : (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-10">
           {upcoming.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="text-muted font-mono text-xs tracking-[0.15em] uppercase">Upcoming</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
+            <section className="flex flex-col gap-4">
+              <SectionHeading>Upcoming</SectionHeading>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {upcoming.map((trip) => (
                   <TripCard key={trip.id} trip={trip} />
                 ))}
@@ -126,9 +155,9 @@ export default async function TripsPage() {
           )}
 
           {past.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="text-muted font-mono text-xs tracking-[0.15em] uppercase">Past</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
+            <section className="flex flex-col gap-4">
+              <SectionHeading>Past</SectionHeading>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {past.map((trip) => (
                   <TripCard key={trip.id} trip={trip} />
                 ))}

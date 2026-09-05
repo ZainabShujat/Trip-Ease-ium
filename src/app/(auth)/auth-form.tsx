@@ -61,7 +61,7 @@ export function AuthForm({
 
       {googleEnabled && (
         <>
-          <div className="text-muted flex items-center gap-3 text-xs">
+          <div className="text-ink-muted flex items-center gap-3 text-xs">
             <span className="bg-line h-px flex-1" />
             or
             <span className="bg-line h-px flex-1" />
@@ -78,7 +78,7 @@ export function AuthForm({
         {isRegister ? 'Already have an account? ' : 'No account yet? '}
         <Link
           href={isRegister ? '/login' : '/register'}
-          className="text-accent underline underline-offset-4"
+          className="text-terracotta-deep font-medium underline underline-offset-4"
         >
           {isRegister ? 'Sign in' : 'Create one'}
         </Link>

@@ -6,6 +6,9 @@ import { currentUser, isAuthConfigured } from '@/server/auth/guard';
 import { SUPPORTED_DESTINATIONS } from '@/server/trips/service';
 import { CreateTripForm } from './form';
 
+/** Reads the session, so it is rendered per request and never prerendered. */
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Plan a trip' };
 
 export default async function NewTripPage() {

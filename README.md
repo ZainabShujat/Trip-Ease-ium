@@ -67,6 +67,40 @@ Runs `typecheck`, `lint` and `test` in sequence. Individually:
 | `npm run build`     | Production build                                |
 | `npm run format`    | Prettier                                        |
 
+## Deploying to Vercel
+
+The build succeeds with no environment variables at all, so a first deploy will
+never fail on configuration. It will simply run without accounts until you add:
+
+| Variable       | Where to get it                                            |
+| -------------- | ---------------------------------------------------------- |
+| `DATABASE_URL` | Neon → your project → pooled connection string             |
+| `AUTH_SECRET`  | `npx auth secret`                                          |
+
+Add both in **Project → Settings → Environment Variables** (all environments),
+then redeploy. `.env` is git-ignored, so Vercel never sees your local values.
+
+Two details that matter:
+
+- `postinstall` runs `prisma generate`. Vercel caches `node_modules` between
+  builds and does not regenerate the client on its own, so without this a
+  cached install ships a stale or missing Prisma client.
+- Every page that reads the session exports `dynamic = 'force-dynamic'`. Those
+  pages are only dynamic *by accident* otherwise — build once without the auth
+  variables present and Next prerenders them as static, permanently serving a
+  signed-out shell.
+
+Run migrations against the deployed database once, from your machine:
+
+```bash
+npm run db:deploy
+```
+
+A note on latency: the planning engine itself runs in about 30 ms, but each
+database round trip costs whatever the network costs. Put the Neon project in a
+region near your Vercel region — Vercel's default `iad1` pairs well with Neon's
+`us-east-2`.
+
 ## Layout
 
 ```

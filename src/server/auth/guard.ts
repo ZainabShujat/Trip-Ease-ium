@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation';
 import { isDatabaseConfigured } from '../db';
 import { env } from '../env';
 import { auth } from './index';
@@ -41,8 +42,15 @@ export async function currentUser(): Promise<SessionUser | null> {
       name: session.user.name ?? null,
     };
   } catch (error) {
-    // A broken auth configuration must not take down every page that merely
-    // wants to know whether someone is signed in.
+    // Next signals control flow by throwing: redirect(), notFound(), and the
+    // dynamic-server-usage bailout that tells the framework a route cannot be
+    // prerendered. Swallowing those would stop Next marking this route
+    // dynamic and would fill the build log with errors that are not errors,
+    // so hand them straight back before treating anything as a failure.
+    unstable_rethrow(error);
+
+    // A genuinely broken auth configuration must not take down every page
+    // that merely wants to know whether someone is signed in.
     console.error('[auth] session lookup failed:', error);
     return null;
   }
