@@ -2,19 +2,16 @@
 
 import { useActionState, useState, useMemo } from 'react';
 import {
-  BudgetIcon,
   CalendarIcon,
   CheckIcon,
   CompassIcon,
   PlacesIcon,
-  StayIcon,
   TransportIcon,
   TravellersIcon,
 } from '@/components/brand/icons';
 import {
   Button,
   Card,
-  CheckboxChip,
   ErrorNote,
   Field,
   Input,
