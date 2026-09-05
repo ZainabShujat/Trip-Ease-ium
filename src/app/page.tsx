@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/site-header';
 import { SetupNotice } from '@/components/setup-notice';
 import { TrapeziumMark, Wordmark } from '@/components/brand/logo';
+import { HeroJourney } from '@/components/brand/hero-journey';
 import {
   BudgetIcon,
   PlacesIcon,
@@ -26,9 +26,6 @@ export const dynamic = 'force-dynamic';
 
 /**
  * The landing page.
- *
- * Signed-in visitors go straight to their trips — a marketing page is not what
- * someone who already has an account came for.
  *
  * The structure follows the brand's own argument: the trapezium holds the
  * whole trip (the four dimensions), and getting there is a journey with stages
@@ -80,7 +77,7 @@ const JOURNEY = [
 ] as const;
 
 export default async function HomePage() {
-  if (await currentUser()) redirect('/trips');
+  const user = await currentUser();
 
   return (
     <>
@@ -88,29 +85,23 @@ export default async function HomePage() {
 
       <main className="flex-1">
         {/* ---------------------------------------------------------------
-            Hero — a thesis, not a billboard. Generous whitespace, the mark
-            given room to be read, and exactly two things to do.
+            Hero — dynamic interactive route experience with traveling beacon
         ---------------------------------------------------------------- */}
-        {/* Sized to the viewport minus the sticky header, so the hero fills
-            the first screen without pushing its own call to action below the
-            fold. `svh` rather than `vh`: on mobile browsers `vh` includes the
-            retracting address bar and overflows. */}
-        <section className="relative flex min-h-[calc(100svh-3.75rem)] items-center overflow-hidden">
-          {/* Quiet geometry behind the type: decorative, low contrast, and
-              well clear of the text it sits behind. */}
+        <section className="relative flex min-h-[calc(100svh-3.75rem)] items-center overflow-hidden py-8 sm:py-12">
+          {/* Ambient atmosphere behind the text */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="clip-trapezium bg-sage-soft/60 absolute -top-24 -right-24 h-[420px] w-[520px] rotate-6" />
-            <div className="clip-trapezium-down bg-peach-soft/70 absolute -bottom-32 -left-40 h-[300px] w-[460px] -rotate-3" />
+            <div className="clip-trapezium bg-sage-soft/60 absolute -top-24 -right-24 h-[440px] w-[540px] rotate-6" />
+            <div className="clip-trapezium-down bg-peach-soft/70 absolute -bottom-32 -left-40 h-[320px] w-[480px] -rotate-3" />
           </div>
 
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-10 sm:px-8 sm:py-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
+          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
             <div className="animate-rise flex flex-col items-start gap-5">
-              <span className="border-sage/40 bg-surface text-sage-deep inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium">
+              <span className="border-sage/40 bg-surface text-sage-deep inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-medium shadow-xs">
                 <span aria-hidden className="clip-trapezium bg-sage h-2.5 w-3" />
-                End-to-end trip planning
+                Intelligent end-to-end trip planning
               </span>
 
-              <h1 className="text-forest font-serif text-[2.6rem] leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">
+              <h1 className="text-forest font-serif text-[2.75rem] leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">
                 Plan the whole journey.
                 <span className="text-sage-deep block">Not just the destination.</span>
               </h1>
@@ -121,13 +112,19 @@ export default async function HomePage() {
                 and budget, all agreeing with each other.
               </p>
 
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <ButtonLink href="/register" size="lg">
+              <div className="flex flex-wrap items-center gap-3.5 pt-1">
+                <ButtonLink href={user ? '/trips/new' : '/register'} size="lg">
                   Plan a trip
                 </ButtonLink>
-                <ButtonLink href="#how-it-works" variant="secondary" size="lg">
-                  Explore how it works
-                </ButtonLink>
+                {user ? (
+                  <ButtonLink href="/trips" variant="secondary" size="lg">
+                    View my trips
+                  </ButtonLink>
+                ) : (
+                  <ButtonLink href="#how-it-works" variant="secondary" size="lg">
+                    Explore how it works
+                  </ButtonLink>
+                )}
               </div>
 
               <p className="text-ink-muted text-sm">
@@ -136,21 +133,9 @@ export default async function HomePage() {
               </p>
             </div>
 
-            {/* The mark at full size: the brand's clearest statement, and the
-                moment the trapezium wordplay becomes available to notice. */}
-            {/* Hidden on phones. Shrunk down it stopped being a brand statement
-                and became a small box of nothing, and it pushed the CTAs off the
-                first screen. The mark still sits in the header on every page. */}
-            <div className="relative hidden justify-center md:flex lg:justify-end">
-              <div className="border-line bg-surface relative w-full max-w-md rounded-xl border p-8 shadow-[var(--shadow-lg)] sm:p-10">
-                <TrapeziumMark size={280} animated className="mx-auto w-full max-w-[280px]" />
-                <div className="border-line mt-6 flex flex-col items-center gap-1 border-t pt-5 text-center">
-                  <Wordmark className="text-2xl sm:text-3xl" />
-                  <p className="text-ink-muted text-sm">
-                    Plan the whole journey. Not just the destination.
-                  </p>
-                </div>
-              </div>
+            {/* Dynamic Interactive Journey Map Visual */}
+            <div className="relative flex justify-center lg:justify-end">
+              <HeroJourney />
             </div>
           </div>
         </section>

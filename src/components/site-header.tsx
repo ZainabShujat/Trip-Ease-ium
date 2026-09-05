@@ -18,7 +18,7 @@ export async function SiteHeader() {
     <header className="border-line bg-cream/85 sticky top-0 z-30 border-b backdrop-blur-sm">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
         <Link
-          href={user ? '/trips' : '/'}
+          href="/"
           className="rounded transition-opacity hover:opacity-80"
           aria-label="Trip-Ease-ium home"
         >
