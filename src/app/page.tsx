@@ -278,17 +278,23 @@ export default async function HomePage() {
             Closing CTA on a forest band with an angled top edge: the
             geometry doing a structural job rather than a decorative one.
         ---------------------------------------------------------------- */}
-        <section className="clip-slope-top bg-forest relative">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:px-8 sm:py-24">
-            <ScrollAssembledMark size={72} />
+        <section className="clip-slope-top bg-forest relative overflow-hidden">
+          {/* Ambient warm radial glow framing the drawn brand centerpiece */}
+          <div className="pointer-events-none absolute top-12 left-1/2 h-72 w-96 -translate-x-1/2 rounded-full bg-peach/10 blur-3xl" />
+
+          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-7 px-4 py-20 text-center sm:px-8 sm:py-28">
+            <ScrollAssembledMark
+              size={280}
+              className="w-56 sm:w-72 md:w-80 lg:w-[320px] drop-shadow-[0_16px_36px_rgba(0,0,0,0.35)]"
+            />
             <ScrollGlowHeading as="h2" className="text-cream max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
               Your next trip, planned properly.
             </ScrollGlowHeading>
-            <p className="text-cream/75 max-w-xl text-xs sm:text-sm leading-relaxed">
+            <p className="text-cream/80 max-w-xl text-xs sm:text-sm md:text-base leading-relaxed">
               Free to plan. Nothing is booked on your behalf: every recommendation links out to the
               provider so you stay in control.
             </p>
-            <ButtonLink href="/register" size="lg">
+            <ButtonLink href="/register" size="lg" className="shadow-lg hover:shadow-xl transition-shadow text-base px-8 py-3.5">
               Plan a trip
             </ButtonLink>
           </div>

@@ -15,12 +15,12 @@ export function FullPageJourneyPath() {
     xPercent: number;
     yPercent: number;
     angle: number;
-    dockFactor: number;
+    progress: number;
   }>({
-    xPercent: 52,
+    xPercent: 51,
     yPercent: 2,
     angle: 180, // Facing downwards initially
-    dockFactor: 0,
+    progress: 0,
   });
 
   useEffect(() => {
@@ -37,10 +37,10 @@ export function FullPageJourneyPath() {
     }
 
     const updateFrame = () => {
-      // Subtle, smooth lerp damping for cartographic trail marker
+      // Slow, smooth, luxurious lerp damping
       const dist = targetProgressRef.current - currentProgressRef.current;
       if (Math.abs(dist) > 0.0001) {
-        currentProgressRef.current += dist * 0.06;
+        currentProgressRef.current += dist * 0.055;
       } else {
         currentProgressRef.current = targetProgressRef.current;
       }
@@ -79,14 +79,11 @@ export function FullPageJourneyPath() {
         const xPercent = pt.x / 10;
         const yPercent = pt.y / 10;
 
-        // Destination docking factor as marker reaches the logo in the CTA section
-        const dockFactor = Math.min(Math.max((progress - 0.88) / 0.12, 0), 1);
-
         setArrowPos({
           xPercent,
           yPercent,
           angle: currentAngleRef.current,
-          dockFactor,
+          progress,
         });
 
         // Broadcast current viewport Y of arrow for title alignment glow
@@ -134,7 +131,7 @@ export function FullPageJourneyPath() {
     <div
       ref={containerRef}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-20 select-none"
+      className="pointer-events-none absolute inset-0 z-30 select-none"
     >
       {/* Whisper-soft ambient background gradients */}
       <div className="clip-trapezium bg-sage-soft/10 absolute -top-24 -left-32 h-[500px] w-[600px] -rotate-6 blur-3xl" />
@@ -142,62 +139,65 @@ export function FullPageJourneyPath() {
       <div className="clip-trapezium bg-sage-soft/8 absolute top-1/2 -left-36 h-[600px] w-[600px] rotate-6 blur-3xl" />
       <div className="clip-trapezium-down bg-peach-soft/8 absolute top-3/4 -right-32 h-[550px] w-[600px] -rotate-6 blur-3xl" />
 
-      {/* SVG Canvas for the refined, lightweight travel-map route */}
+      {/* SVG Canvas for the super-light, thin translucent journey line overlapping all content */}
       <svg
         className="absolute inset-0 h-full w-full"
         viewBox="0 0 1000 1000"
         preserveAspectRatio="none"
       >
         <defs>
-          <linearGradient id="travelMapRouteGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#17382a" stopOpacity="0.20" />
-            <stop offset="25%" stopColor="#2e6b54" stopOpacity="0.25" />
-            <stop offset="55%" stopColor="#b45309" stopOpacity="0.30" />
-            <stop offset="85%" stopColor="#d97706" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.40" />
+          <linearGradient id="superLightJourneyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#17382a" stopOpacity="0.25" />
+            <stop offset="25%" stopColor="#2e6b54" stopOpacity="0.30" />
+            <stop offset="55%" stopColor="#b45309" stopOpacity="0.40" />
+            <stop offset="85%" stopColor="#d97706" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.55" />
           </linearGradient>
         </defs>
 
-        {/* Faint Dashed Travel-Trail Under-Guide (0.75px, subtle cartographic track) */}
+        {/* Faint Dashed Under-Guide (0.85px, 10% opacity) */}
         <path
-          d="M 520,20 C 680,30 820,50 820,90 C 820,130 750,175 660,195 C 570,215 440,215 320,225 C 240,232 160,245 110,270 C 85,290 80,315 110,332 C 170,336 270,338 380,340 C 490,340 600,342 715,344 C 820,348 915,360 925,395 C 935,430 890,460 810,475 C 730,490 600,495 480,505 C 340,518 180,530 120,555 C 90,570 110,588 180,595 C 270,600 380,600 480,600 C 580,600 680,600 780,600 C 865,600 930,612 930,635 C 930,648 830,644 650,644 C 450,644 240,644 140,660 C 110,670 115,685 160,690 C 240,692 330,692 410,692 C 500,692 570,692 630,692 C 710,692 780,692 835,695 C 875,715 885,738 840,755 C 785,770 675,772 590,772 C 555,772 530,771 515,771"
+          d="M 510,20 C 720,50 860,95 830,155 C 800,210 520,225 320,240 C 140,255 130,310 220,345 C 310,380 680,385 760,420 C 840,455 830,510 680,545 C 530,580 270,595 190,635 C 110,675 140,715 280,735 C 440,755 820,775 860,820 C 900,865 750,885 610,910 C 450,932 340,944 420,947 C 450,948 475,948 490,948"
           stroke="var(--line-strong)"
-          strokeWidth="0.75"
-          strokeDasharray="2 5"
+          strokeWidth="0.85"
+          strokeDasharray="3 6"
           fill="none"
-          opacity="0.08"
+          opacity="0.10"
         />
 
-        {/* Intentional Travel-Map Route: flows through whitespace, connects stages 1->2->3->4->5->6->7, concludes into the CTA logo pin */}
+        {/* Curvy, organic, random adventure route line - strictly monotonic downward Y, ends at y=948 above footer */}
         <path
           ref={pathRef}
-          d="M 520,20 C 680,30 820,50 820,90 C 820,130 750,175 660,195 C 570,215 440,215 320,225 C 240,232 160,245 110,270 C 85,290 80,315 110,332 C 170,336 270,338 380,340 C 490,340 600,342 715,344 C 820,348 915,360 925,395 C 935,430 890,460 810,475 C 730,490 600,495 480,505 C 340,518 180,530 120,555 C 90,570 110,588 180,595 C 270,600 380,600 480,600 C 580,600 680,600 780,600 C 865,600 930,612 930,635 C 930,648 830,644 650,644 C 450,644 240,644 140,660 C 110,670 115,685 160,690 C 240,692 330,692 410,692 C 500,692 570,692 630,692 C 710,692 780,692 835,695 C 875,715 885,738 840,755 C 785,770 675,772 590,772 C 555,772 530,771 515,771"
-          stroke="url(#travelMapRouteGrad)"
-          strokeWidth="0.95"
+          d="M 510,20 C 720,50 860,95 830,155 C 800,210 520,225 320,240 C 140,255 130,310 220,345 C 310,380 680,385 760,420 C 840,455 830,510 680,545 C 530,580 270,595 190,635 C 110,675 140,715 280,735 C 440,755 820,775 860,820 C 900,865 750,885 610,910 C 450,932 340,944 420,947 C 450,948 475,948 490,948"
+          stroke="url(#superLightJourneyGrad)"
+          strokeWidth="1.15"
           strokeLinecap="round"
           fill="none"
-          className="drop-shadow-[0_0_2px_rgba(217,119,6,0.15)]"
+          className="drop-shadow-[0_0_3px_rgba(217,119,6,0.20)]"
         />
       </svg>
 
-      {/* Directional Travel-Map Route Marker: visually attached, clearly directional, merges smoothly into logo destination pin */}
+      {/* Directional arrow with smooth rotation and slow gliding motion */}
       <div
         style={{
           left: `${arrowPos.xPercent}%`,
           top: `${arrowPos.yPercent}%`,
-          transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg) scale(${Math.max(1 - arrowPos.dockFactor * 0.75, 0.25)})`,
-          opacity: Math.max(1 - arrowPos.dockFactor * 0.85, 0.15),
+          transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg)`,
+          opacity: arrowPos.progress >= 0.86 ? Math.max(1 - (arrowPos.progress - 0.86) / 0.05, 0) : 1,
         }}
-        className="pointer-events-none absolute z-30 transition-transform duration-150 ease-out"
+        className="pointer-events-none absolute z-40 transition-transform duration-200 ease-out"
       >
-        <div className="relative flex size-7 sm:size-8 items-center justify-center">
-          {/* Subtle warm ambient cartographic halo */}
-          <span className="absolute inline-flex size-full rounded-full bg-[#D97706]/15 blur-[2px]" />
+        <div className="relative flex size-9 sm:size-10 items-center justify-center">
+          {/* Warm golden outer pulsating halo wave */}
+          <span className="absolute inline-flex size-full rounded-full bg-[#F59E0B]/25 animate-ping duration-1000" />
 
-          {/* Precision Travel-Map Waypoint Pin */}
-          <div className="relative flex size-5 sm:size-6 items-center justify-center rounded-full bg-surface border-[1.5px] border-[#D97706] shadow-[0_1px_4px_rgba(0,0,0,0.12),0_0_6px_rgba(217,119,6,0.3)] text-[#B45309]">
-            <svg viewBox="0 0 16 16" width="9" height="9" fill="currentColor" className="drop-shadow-xs">
-              <path d="M8 1.5 L13.5 13.5 L8 10.5 L2.5 13.5 Z" />
+          {/* Radiant golden halo aura */}
+          <span className="absolute inline-flex size-8 sm:size-9 rounded-full bg-[#D97706]/20 blur-[3px]" />
+
+          {/* High-visibility Warm Golden Beacon Body */}
+          <div className="relative flex size-6 sm:size-7 items-center justify-center rounded-full bg-gradient-to-br from-[#F59E0B] via-[#D97706] to-[#92400E] border-2 border-white shadow-[0_0_12px_rgba(245,158,11,0.65),0_0_24px_rgba(217,119,6,0.35),0_2px_6px_rgba(0,0,0,0.3)] text-white">
+            <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              <path d="M8 1.5 L14 13.5 L8 10.5 L2 13.5 Z" />
             </svg>
           </div>
         </div>
