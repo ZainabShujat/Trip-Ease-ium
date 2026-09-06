@@ -1,6 +1,6 @@
 import { SiteHeader } from '@/components/site-header';
 import { SetupNotice } from '@/components/setup-notice';
-import { TrapeziumMark, Wordmark } from '@/components/brand/logo';
+import { Wordmark } from '@/components/brand/logo';
 import { ScrollAssembledMark } from '@/components/brand/scroll-assembled-mark';
 import { HeroJourney } from '@/components/brand/hero-journey';
 import { HeroTitle } from '@/components/brand/hero-interactive-title';
