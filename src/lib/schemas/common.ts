@@ -43,7 +43,7 @@ export const MinorAmountSchema = z
   .int('money must be an integer number of minor units (paise)')
   .nonnegative();
 
-export const CurrencySchema = z.enum(['INR', 'USD', 'EUR']);
+export const CurrencySchema = z.enum(['INR', 'USD', 'EUR', 'GBP']);
 export type Currency = z.infer<typeof CurrencySchema>;
 
 export const DurationMinsSchema = z.number().int().nonnegative();

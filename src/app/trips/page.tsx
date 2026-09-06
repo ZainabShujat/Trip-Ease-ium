@@ -13,7 +13,8 @@ import {
   SectionHeading,
   StatusBadge,
 } from '@/components/ui';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, convertMinor, type SupportedCurrency } from '@/lib/money';
+import { CurrencySwitcher } from '@/components/currency-switcher';
 import { currentUser, isAuthConfigured } from '@/server/auth/guard';
 import { listTrips } from '@/server/trips/service';
 
@@ -36,12 +37,23 @@ function formatDateRange(start: string, end: string): string {
   return `${fmt(start, !sameYear)} – ${fmt(end, true)}`;
 }
 
-function TripCard({ trip }: { trip: TripSummary }) {
+function TripCard({
+  trip,
+  activeCurrency = 'INR',
+}: {
+  trip: TripSummary;
+  activeCurrency?: SupportedCurrency;
+}) {
   const planned = trip.estimatedMinor > 0;
   const over = trip.estimatedMinor > trip.budgetTotalMinor;
 
+  const displayMoney = (minor: number) => {
+    const converted = convertMinor(minor, trip.currency || 'INR', activeCurrency);
+    return formatMoney(converted, activeCurrency);
+  };
+
   return (
-    <Link href={`/trips/${trip.id}`} className="group block rounded-lg">
+    <Link href={`/trips/${trip.id}${activeCurrency !== 'INR' ? `?currency=${activeCurrency}` : ''}`} className="group block rounded-lg">
       <Card interactive className="flex h-full flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
@@ -73,17 +85,17 @@ function TripCard({ trip }: { trip: TripSummary }) {
             {planned ? (
               <>
                 <span className="text-forest font-semibold">
-                  {formatMoney(trip.estimatedMinor, trip.currency)}
+                  {displayMoney(trip.estimatedMinor)}
                 </span>
                 <span className="text-ink-muted">
-                  of {formatMoney(trip.budgetTotalMinor, trip.currency)}
+                  of {displayMoney(trip.budgetTotalMinor)}
                 </span>
               </>
             ) : (
               <>
                 <span className="text-ink-soft">Not planned yet</span>
                 <span className="text-ink-muted">
-                  {formatMoney(trip.budgetTotalMinor, trip.currency)} budget
+                  {displayMoney(trip.budgetTotalMinor)} budget
                 </span>
               </>
             )}
@@ -98,7 +110,11 @@ function TripCard({ trip }: { trip: TripSummary }) {
   );
 }
 
-export default async function TripsPage() {
+export default async function TripsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ currency?: string }>;
+}) {
   // Configuration is checked before the session, so an unconfigured install
   // explains itself instead of bouncing the visitor to a sign-in page that
   // cannot work either.
@@ -114,6 +130,9 @@ export default async function TripsPage() {
   const user = await currentUser();
   if (!user) redirect('/login');
 
+  const sParams = searchParams ? await searchParams : undefined;
+  const activeCurrency = (sParams?.currency?.toUpperCase() || 'INR') as SupportedCurrency;
+
   const { upcoming, past } = await listTrips(user.id);
   const total = upcoming.length + past.length;
 
@@ -127,7 +146,12 @@ export default async function TripsPage() {
             ? undefined
             : `${upcoming.length} upcoming · ${past.length} ${past.length === 1 ? 'past trip' : 'past trips'}`
         }
-        actions={<ButtonLink href="/trips/new">Plan a trip</ButtonLink>}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <CurrencySwitcher currentCurrency={activeCurrency} />
+            <ButtonLink href="/trips/new">Plan a trip</ButtonLink>
+          </div>
+        }
       />
 
       {total === 0 ? (
@@ -148,7 +172,7 @@ export default async function TripsPage() {
               <SectionHeading>Upcoming</SectionHeading>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {upcoming.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
+                  <TripCard key={trip.id} trip={trip} activeCurrency={activeCurrency} />
                 ))}
               </div>
             </section>
@@ -159,7 +183,7 @@ export default async function TripsPage() {
               <SectionHeading>Past</SectionHeading>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {past.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
+                  <TripCard key={trip.id} trip={trip} activeCurrency={activeCurrency} />
                 ))}
               </div>
             </section>

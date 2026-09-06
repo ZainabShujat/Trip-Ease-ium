@@ -18,6 +18,7 @@ import {
   Select,
   Textarea,
 } from '@/components/ui';
+import { formatRupees } from '@/lib/money';
 import { createTripAction, type CreateTripState } from './actions';
 
 const INTERESTS = [
@@ -485,6 +486,22 @@ export function CreateTripForm({ destinations }: { destinations: readonly string
                 required
                 className="font-mono text-base font-semibold"
               />
+              {budgetRupees > 0 && (
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                  <span>Equivalent:</span>
+                  <span className="font-mono font-medium text-ink-soft">
+                    ≈ ${Math.round(budgetRupees / 86.5).toLocaleString('en-US')} USD
+                  </span>
+                  <span>·</span>
+                  <span className="font-mono font-medium text-ink-soft">
+                    €{Math.round(budgetRupees / 93.0).toLocaleString('en-US')} EUR
+                  </span>
+                  <span>·</span>
+                  <span className="font-mono font-medium text-ink-soft">
+                    £{Math.round(budgetRupees / 111.0).toLocaleString('en-US')} GBP
+                  </span>
+                </div>
+              )}
             </Field>
           </div>
 
@@ -492,7 +509,7 @@ export function CreateTripForm({ destinations }: { destinations: readonly string
           <div className="flex items-center justify-between rounded-lg border border-line bg-surface-sunk/60 px-4 py-3 text-sm">
             <span className="text-ink-soft">Estimated per-person budget:</span>
             <span className="font-mono text-base font-bold text-forest">
-              ₹{perPersonBudget.toLocaleString('en-IN')}{' '}
+              {formatRupees(perPersonBudget)}{' '}
               <span className="text-xs font-normal text-ink-muted">/ traveller</span>
             </span>
           </div>
@@ -757,13 +774,16 @@ export function CreateTripForm({ destinations }: { destinations: readonly string
                 </button>
               </div>
               <p className="font-serif text-lg font-bold text-forest">
-                ₹{budgetRupees.toLocaleString('en-IN')}{' '}
+                {formatRupees(budgetRupees)}{' '}
                 <span className="text-xs font-normal text-ink-soft">
                   for {travellerCount} {travellerCount === 1 ? 'person' : 'travellers'}
                 </span>
               </p>
-              <p className="text-xs text-ink-muted">
-                ~₹{perPersonBudget.toLocaleString('en-IN')} per traveller
+              <p className="text-xs text-ink-muted flex flex-wrap items-center gap-1.5">
+                <span>~{formatRupees(perPersonBudget)} per traveller</span>
+                <span className="font-mono text-ink-soft">
+                  (≈ ${Math.round(budgetRupees / 86.5).toLocaleString('en-US')} USD)
+                </span>
               </p>
             </div>
 

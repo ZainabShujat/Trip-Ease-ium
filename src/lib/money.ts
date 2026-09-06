@@ -59,28 +59,71 @@ export function ratioOf(amount: Minor, budget: Minor): number {
   return amount / budget;
 }
 
-const CURRENCY_SYMBOL: Record<string, string> = {
+export const SUPPORTED_CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
+export const CURRENCY_LABELS: Record<SupportedCurrency, string> = {
+  INR: 'INR (₹)',
+  USD: 'USD ($)',
+  EUR: 'EUR (€)',
+  GBP: 'GBP (£)',
+};
+
+export const CURRENCY_SYMBOL: Record<string, string> = {
   INR: '₹',
   USD: '$',
   EUR: '€',
+  GBP: '£',
 };
 
 /**
- * Format for display, e.g. 3845000 -> "₹38,450". Fractional paise are dropped
- * because travel prices are quoted in whole rupees; pass `showMinor` when the
- * exact figure matters (an expense split, say).
+ * Standard benchmark exchange rates relative to Indian Rupee (INR).
+ * 1 USD ≈ 86.5 INR, 1 EUR ≈ 93.0 INR, 1 GBP ≈ 111.0 INR.
+ */
+export const INR_EXCHANGE_RATES: Record<string, number> = {
+  INR: 1,
+  USD: 1 / 86.5,
+  EUR: 1 / 93.0,
+  GBP: 1 / 111.0,
+};
+
+/**
+ * Convert an amount from one currency to another in real-time.
+ * Strictly maintains whole currency units (no fractional paise/cents).
+ */
+export function convertMinor(amountMinor: Minor, fromCurrency = 'INR', toCurrency = 'INR'): Minor {
+  if (fromCurrency === toCurrency) return amountMinor;
+  const inrRate = INR_EXCHANGE_RATES[fromCurrency] ?? 1;
+  const toRate = INR_EXCHANGE_RATES[toCurrency] ?? 1;
+  const inrAmount = amountMinor / inrRate;
+  const converted = inrAmount * toRate;
+  return Math.round(converted);
+}
+
+/**
+ * Format money cleanly for display.
+ * Always formats in whole currency units (Rupees, Dollars, etc.) without fractional paise.
  */
 export function formatMoney(
   minor: Minor,
   currency = 'INR',
   options: { showMinor?: boolean; locale?: string } = {},
 ): string {
-  const { showMinor = false, locale = 'en-IN' } = options;
+  const { showMinor = false, locale = 'en-US' } = options;
   const symbol = CURRENCY_SYMBOL[currency] ?? `${currency} `;
-  const major = toMajor(minor);
+  // Strictly whole rupees / currency units — drops all fractional paise
+  const major = Math.round(toMajor(minor));
   const formatted = major.toLocaleString(locale, {
     minimumFractionDigits: showMinor ? 2 : 0,
     maximumFractionDigits: showMinor ? 2 : 0,
   });
   return `${symbol}${formatted}`;
+}
+
+/**
+ * Format a major rupee amount cleanly as a whole integer without paise.
+ * e.g., 40000 -> "₹40,000"
+ */
+export function formatRupees(amountInRupees: number): string {
+  return `₹${Math.round(amountInRupees).toLocaleString('en-US')}`;
 }

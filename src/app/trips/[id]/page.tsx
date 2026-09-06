@@ -21,7 +21,8 @@ import {
   StatusBadge,
   cx,
 } from '@/components/ui';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, convertMinor, type SupportedCurrency } from '@/lib/money';
+import { CurrencySwitcher } from '@/components/currency-switcher';
 import { currentUser } from '@/server/auth/guard';
 import { isDatabaseConfigured } from '@/server/db';
 import { getTrip } from '@/server/trips/service';
@@ -98,14 +99,29 @@ function hours(mins: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
-export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
+export default async function TripPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ currency?: string }>;
+}) {
   const user = await currentUser();
   if (!user) redirect('/login');
   if (!isDatabaseConfigured()) notFound();
 
   const { id } = await params;
+  const sParams = searchParams ? await searchParams : undefined;
+  const activeCurrency = (sParams?.currency?.toUpperCase() || 'INR') as SupportedCurrency;
+
   const trip = await getTrip(id, user.id);
   if (!trip) notFound();
+
+  const tripBaseCurrency = trip.currency || 'INR';
+  const displayMoney = (minor: number) => {
+    const converted = convertMinor(minor, tripBaseCurrency, activeCurrency);
+    return formatMoney(converted, activeCurrency);
+  };
 
   const estimatedMinor = trip.budgetLines.reduce((sum, line) => sum + line.estimatedMinor, 0);
   const remainingMinor = trip.budgetTotalMinor - estimatedMinor;
@@ -148,8 +164,8 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
         estimatedMinor === 0
           ? 'Not costed yet'
           : remainingMinor >= 0
-            ? `${formatMoney(remainingMinor, trip.currency)} to spare`
-            : `${formatMoney(Math.abs(remainingMinor), trip.currency)} over`,
+            ? `${displayMoney(remainingMinor)} to spare`
+            : `${displayMoney(Math.abs(remainingMinor))} over`,
     },
     {
       label: 'Plan checked',
@@ -186,7 +202,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
       Icon: TransportIcon,
       title: outbound?.operator,
       detail: outbound
-        ? `${formatMoney(outbound.pricePerPersonMinor, trip.currency)} per person · ${hours(outbound.durationMins)}`
+        ? `${displayMoney(outbound.pricePerPersonMinor)} per person · ${hours(outbound.durationMins)}`
         : null,
       url: outbound?.bookingUrl,
       sourceKind: outbound?.sourceKind,
@@ -197,7 +213,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
       Icon: TransportIcon,
       title: inbound?.operator,
       detail: inbound
-        ? `${formatMoney(inbound.pricePerPersonMinor, trip.currency)} per person · ${hours(inbound.durationMins)}`
+        ? `${displayMoney(inbound.pricePerPersonMinor)} per person · ${hours(inbound.durationMins)}`
         : null,
       url: inbound?.bookingUrl,
       sourceKind: inbound?.sourceKind,
@@ -208,7 +224,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
       Icon: StayIcon,
       title: lodging?.name,
       detail: lodging
-        ? `${formatMoney(lodging.nightlyRateMinor, trip.currency)} a night · ${formatMoney(lodging.totalRateMinor, trip.currency)} total`
+        ? `${displayMoney(lodging.nightlyRateMinor)} a night · ${displayMoney(lodging.totalRateMinor)} total`
         : null,
       url: lodging?.bookingUrl,
       sourceKind: lodging?.sourceKind,
@@ -233,7 +249,10 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
                 {trip.title}
               </h1>
             </div>
-            <StatusBadge status={trip.status} />
+            <div className="flex flex-wrap items-center gap-3">
+              <CurrencySwitcher currentCurrency={activeCurrency} />
+              <StatusBadge status={trip.status} />
+            </div>
           </div>
 
           <dl className="border-line grid grid-cols-2 gap-x-6 gap-y-4 border-t pt-5 sm:grid-cols-4">
@@ -253,14 +272,14 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
             />
             <Stat
               label="Estimated"
-              value={formatMoney(estimatedMinor, trip.currency)}
-              sub={`of ${formatMoney(trip.budgetTotalMinor, trip.currency)}`}
+              value={displayMoney(estimatedMinor)}
+              sub={`of ${displayMoney(trip.budgetTotalMinor)}`}
             />
             <Stat
               label="Remaining"
               value={
                 <span className={remainingMinor < 0 ? 'text-terracotta-deep' : 'text-sage-deep'}>
-                  {formatMoney(Math.abs(remainingMinor), trip.currency)}
+                  {displayMoney(Math.abs(remainingMinor))}
                 </span>
               }
               sub={remainingMinor < 0 ? 'over budget' : 'to spare'}
@@ -333,19 +352,28 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
       {/* --- budget ------------------------------------------------------- */}
       <Card className="flex flex-col gap-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <SectionHeading>Budget</SectionHeading>
+          <div className="flex flex-wrap items-center gap-3">
+            <SectionHeading>Budget</SectionHeading>
+            <CurrencySwitcher currentCurrency={activeCurrency} />
+          </div>
           <p className="tabular text-sm">
             <span className="text-forest font-serif text-2xl font-bold">
-              {formatMoney(estimatedMinor, trip.currency)}
+              {displayMoney(estimatedMinor)}
             </span>
             <span className="text-ink-muted">
               {' '}
-              / {formatMoney(trip.budgetTotalMinor, trip.currency)}
+              / {displayMoney(trip.budgetTotalMinor)}
             </span>
           </p>
         </div>
 
         <BudgetBar estimatedMinor={estimatedMinor} budgetMinor={trip.budgetTotalMinor} />
+
+        {activeCurrency !== 'INR' && (
+          <p className="rounded-lg bg-surface-sunk/60 px-3 py-1.5 text-xs text-ink-muted italic">
+            * Converted from INR (₹) at standard market exchange rates. The underlying itinerary budget is planned in whole Indian Rupees.
+          </p>
+        )}
 
         {trip.budgetLines.some((l) => l.estimatedMinor > 0) && (
           <dl className="flex flex-col gap-3">
@@ -367,7 +395,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
                     />
                   </div>
                   <dd className="tabular text-forest text-sm font-medium">
-                    {formatMoney(line.estimatedMinor, trip.currency)}
+                    {displayMoney(line.estimatedMinor)}
                   </dd>
                 </div>
               ))}
@@ -398,7 +426,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
                   <span className="text-ink-muted text-sm">{formatDate(day.date)}</span>
                 </h3>
                 <p className="tabular text-ink-muted flex items-center gap-3 text-xs">
-                  <span>{formatMoney(day.totalCostMinor, trip.currency)}</span>
+                  <span>{displayMoney(day.totalCostMinor)}</span>
                   {day.totalTravelMins > 0 && (
                     <span className="flex items-center gap-1">
                       <ClockIcon size={13} />
@@ -450,7 +478,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[id]'>) {
                             </Badge>
                             {item.estimatedCostMinor > 0 && (
                               <span className="tabular text-ink-soft text-xs font-medium">
-                                {formatMoney(item.estimatedCostMinor, trip.currency)}
+                                {displayMoney(item.estimatedCostMinor)}
                               </span>
                             )}
                           </div>
