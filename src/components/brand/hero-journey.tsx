@@ -15,10 +15,12 @@ export function FullPageJourneyPath() {
     xPercent: number;
     yPercent: number;
     angle: number;
+    dockFactor: number;
   }>({
     xPercent: 52,
     yPercent: 2,
     angle: 180, // Facing downwards initially
+    dockFactor: 0,
   });
 
   useEffect(() => {
@@ -77,10 +79,14 @@ export function FullPageJourneyPath() {
         const xPercent = pt.x / 10;
         const yPercent = pt.y / 10;
 
+        // Destination docking factor as marker reaches the logo in the CTA section
+        const dockFactor = Math.min(Math.max((progress - 0.88) / 0.12, 0), 1);
+
         setArrowPos({
           xPercent,
           yPercent,
           angle: currentAngleRef.current,
+          dockFactor,
         });
 
         // Broadcast current viewport Y of arrow for title alignment glow
@@ -154,7 +160,7 @@ export function FullPageJourneyPath() {
 
         {/* Faint Dashed Travel-Trail Under-Guide (0.75px, subtle cartographic track) */}
         <path
-          d="M 520,20 C 680,30 820,50 820,90 C 820,130 750,175 660,195 C 570,215 440,215 320,225 C 240,232 160,245 110,270 C 85,290 80,315 110,332 C 170,336 270,338 380,340 C 490,340 600,342 715,344 C 820,348 915,360 925,395 C 935,430 890,460 810,475 C 730,490 600,495 480,505 C 340,518 180,530 120,555 C 90,570 110,588 180,595 C 270,600 380,600 480,600 C 580,600 680,600 780,600 C 865,600 930,612 930,635 C 930,648 830,644 650,644 C 450,644 240,644 140,660 C 110,670 115,685 160,690 C 240,692 330,692 410,692 C 500,692 570,692 630,692 C 710,692 780,692 835,695 C 880,725 890,770 850,810 C 800,845 680,865 570,880 C 460,895 400,915 430,935 C 450,945 475,948 490,948"
+          d="M 520,20 C 680,30 820,50 820,90 C 820,130 750,175 660,195 C 570,215 440,215 320,225 C 240,232 160,245 110,270 C 85,290 80,315 110,332 C 170,336 270,338 380,340 C 490,340 600,342 715,344 C 820,348 915,360 925,395 C 935,430 890,460 810,475 C 730,490 600,495 480,505 C 340,518 180,530 120,555 C 90,570 110,588 180,595 C 270,600 380,600 480,600 C 580,600 680,600 780,600 C 865,600 930,612 930,635 C 930,648 830,644 650,644 C 450,644 240,644 140,660 C 110,670 115,685 160,690 C 240,692 330,692 410,692 C 500,692 570,692 630,692 C 710,692 780,692 835,695 C 875,715 885,738 840,755 C 785,770 675,772 590,772 C 555,772 530,771 515,771"
           stroke="var(--line-strong)"
           strokeWidth="0.75"
           strokeDasharray="2 5"
@@ -162,10 +168,10 @@ export function FullPageJourneyPath() {
           opacity="0.08"
         />
 
-        {/* Intentional Travel-Map Route: flows through whitespace, connects stages 1->2->3->4->5->6->7, concludes above footer */}
+        {/* Intentional Travel-Map Route: flows through whitespace, connects stages 1->2->3->4->5->6->7, concludes into the CTA logo pin */}
         <path
           ref={pathRef}
-          d="M 520,20 C 680,30 820,50 820,90 C 820,130 750,175 660,195 C 570,215 440,215 320,225 C 240,232 160,245 110,270 C 85,290 80,315 110,332 C 170,336 270,338 380,340 C 490,340 600,342 715,344 C 820,348 915,360 925,395 C 935,430 890,460 810,475 C 730,490 600,495 480,505 C 340,518 180,530 120,555 C 90,570 110,588 180,595 C 270,600 380,600 480,600 C 580,600 680,600 780,600 C 865,600 930,612 930,635 C 930,648 830,644 650,644 C 450,644 240,644 140,660 C 110,670 115,685 160,690 C 240,692 330,692 410,692 C 500,692 570,692 630,692 C 710,692 780,692 835,695 C 880,725 890,770 850,810 C 800,845 680,865 570,880 C 460,895 400,915 430,935 C 450,945 475,948 490,948"
+          d="M 520,20 C 680,30 820,50 820,90 C 820,130 750,175 660,195 C 570,215 440,215 320,225 C 240,232 160,245 110,270 C 85,290 80,315 110,332 C 170,336 270,338 380,340 C 490,340 600,342 715,344 C 820,348 915,360 925,395 C 935,430 890,460 810,475 C 730,490 600,495 480,505 C 340,518 180,530 120,555 C 90,570 110,588 180,595 C 270,600 380,600 480,600 C 580,600 680,600 780,600 C 865,600 930,612 930,635 C 930,648 830,644 650,644 C 450,644 240,644 140,660 C 110,670 115,685 160,690 C 240,692 330,692 410,692 C 500,692 570,692 630,692 C 710,692 780,692 835,695 C 875,715 885,738 840,755 C 785,770 675,772 590,772 C 555,772 530,771 515,771"
           stroke="url(#travelMapRouteGrad)"
           strokeWidth="0.95"
           strokeLinecap="round"
@@ -174,12 +180,13 @@ export function FullPageJourneyPath() {
         />
       </svg>
 
-      {/* Directional Travel-Map Route Marker: visually attached, clearly directional, subtle scroll progression */}
+      {/* Directional Travel-Map Route Marker: visually attached, clearly directional, merges smoothly into logo destination pin */}
       <div
         style={{
           left: `${arrowPos.xPercent}%`,
           top: `${arrowPos.yPercent}%`,
-          transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg)`,
+          transform: `translate(-50%, -50%) rotate(${arrowPos.angle}deg) scale(${Math.max(1 - arrowPos.dockFactor * 0.75, 0.25)})`,
+          opacity: Math.max(1 - arrowPos.dockFactor * 0.85, 0.15),
         }}
         className="pointer-events-none absolute z-30 transition-transform duration-150 ease-out"
       >

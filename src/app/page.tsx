@@ -1,6 +1,7 @@
 import { SiteHeader } from '@/components/site-header';
 import { SetupNotice } from '@/components/setup-notice';
 import { TrapeziumMark, Wordmark } from '@/components/brand/logo';
+import { ScrollAssembledMark } from '@/components/brand/scroll-assembled-mark';
 import { HeroJourney } from '@/components/brand/hero-journey';
 import { HeroTitle } from '@/components/brand/hero-interactive-title';
 import { ScrollGlowHeading } from '@/components/brand/scroll-aligned-glow';
@@ -279,7 +280,7 @@ export default async function HomePage() {
         ---------------------------------------------------------------- */}
         <section className="clip-slope-top bg-forest relative">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:px-8 sm:py-24">
-            <TrapeziumMark size={64} />
+            <ScrollAssembledMark size={72} />
             <ScrollGlowHeading as="h2" className="text-cream max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
               Your next trip, planned properly.
             </ScrollGlowHeading>
