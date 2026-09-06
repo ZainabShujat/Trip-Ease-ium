@@ -281,9 +281,9 @@ export default async function HomePage() {
           {/* Ambient warm radial glow framing the drawn brand centerpiece */}
           <div className="pointer-events-none absolute top-12 left-1/2 h-72 w-96 -translate-x-1/2 rounded-full bg-peach/10 blur-3xl" />
 
-          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 pt-8 pb-20 text-center sm:px-8 sm:pt-12 sm:pb-28">
-            {/* Space where the continuous journey route curls up and forms the Trip-Ease-ium logo */}
-            <div className="h-44 sm:h-52 md:h-64 w-full select-none pointer-events-none" aria-hidden="true" />
+          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 pt-12 pb-20 text-center sm:px-8 sm:pt-16 sm:pb-28">
+            {/* Dedicated unsquished space where the continuous journey route curls up and forms the Trip-Ease-ium logo */}
+            <div id="cta-logo-spot" className="h-60 sm:h-72 md:h-80 w-full max-w-md select-none pointer-events-none" aria-hidden="true" />
             <ScrollGlowHeading as="h2" className="text-cream max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
               Your next trip, planned properly.
             </ScrollGlowHeading>
