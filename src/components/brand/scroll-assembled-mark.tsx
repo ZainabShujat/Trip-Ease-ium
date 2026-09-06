@@ -15,11 +15,12 @@ import { useEffect, useRef, useState, type SVGProps } from 'react';
  * 5. Scrolling back up reverses the animation naturally, with the arrow un-drawing the logo.
  */
 export function ScrollAssembledMark({
-  size = 280,
+  size = 360,
   className = '',
   ...props
 }: SVGProps<SVGSVGElement> & { size?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const leadInPathRef = useRef<SVGPathElement>(null);
   const framePathRef = useRef<SVGPathElement>(null);
   const routePathRef = useRef<SVGPathElement>(null);
 
@@ -31,21 +32,24 @@ export function ScrollAssembledMark({
     visible: boolean;
     scale: number;
   }>({
-    x: 32,
-    y: 14,
-    angle: 90,
+    x: 20,
+    y: -40,
+    angle: 165,
     visible: false,
     scale: 1,
   });
 
   useEffect(() => {
+    const leadInPath = leadInPathRef.current;
     const framePath = framePathRef.current;
     const routePath = routePathRef.current;
 
+    let leadInLen = 56;
     let frameLen = 265;
     let routeLen = 85;
 
     try {
+      if (leadInPath) leadInLen = leadInPath.getTotalLength();
       if (framePath) frameLen = framePath.getTotalLength();
       if (routePath) routeLen = routePath.getTotalLength();
     } catch {
@@ -57,26 +61,48 @@ export function ScrollAssembledMark({
       const rect = containerRef.current.getBoundingClientRect();
       const vh = window.innerHeight || 1;
 
-      // Start drawing as the CTA logo approaches from the lower viewport
-      // Complete as it centers in view
-      const enterY = vh * 0.94;
-      const targetY = vh * 0.40;
+      // Start drawing as the CTA section approaches from the lower viewport
+      // Reach completion as the logo settles gracefully into center view
+      const enterY = vh * 0.96;
+      const targetY = vh * 0.38;
       const raw = (enterY - rect.top) / (enterY - targetY);
       const clamped = Math.min(Math.max(raw, 0), 1);
       setProgress(clamped);
 
       // Compute exact position and tangent orientation for the drawing arrow
-      if (clamped < 0.02) {
+      if (clamped < 0.01) {
         setArrowState({
-          x: 32,
-          y: 14,
-          angle: 90,
+          x: 20,
+          y: -40,
+          angle: 165,
           visible: false,
-          scale: 0.8,
+          scale: 0.85,
         });
-      } else if (clamped <= 0.54) {
-        // Phase 1: Arrow physically draws the outer trapezium frame
-        const frameP = (clamped - 0.02) / 0.52;
+      } else if (clamped <= 0.14) {
+        // Phase 0: Arrow arrives along the incoming journey line from above into the logo corner
+        const leadP = (clamped - 0.01) / 0.13;
+        const targetDistance = Math.min(leadP * leadInLen, leadInLen);
+        try {
+          if (leadInPath) {
+            const pt = leadInPath.getPointAtLength(targetDistance);
+            const delta = 2;
+            const pAhead = leadInPath.getPointAtLength(Math.min(targetDistance + delta, leadInLen));
+            const pBehind = leadInPath.getPointAtLength(Math.max(targetDistance - delta, 0));
+            const angle = Math.atan2(pAhead.y - pBehind.y, pAhead.x - pBehind.x) * (180 / Math.PI) + 90;
+            setArrowState({
+              x: pt.x,
+              y: pt.y,
+              angle,
+              visible: true,
+              scale: 1,
+            });
+          }
+        } catch {
+          // Fallback
+        }
+      } else if (clamped <= 0.58) {
+        // Phase 1: Arrow physically draws the outer trapezium frame of the logo
+        const frameP = (clamped - 0.14) / 0.44;
         const targetDistance = Math.min(frameP * frameLen, frameLen);
         try {
           if (framePath) {
@@ -97,8 +123,8 @@ export function ScrollAssembledMark({
           // Fallback
         }
       } else if (clamped <= 0.88) {
-        // Phase 2: Arrow swoops into the scene and draws the inner winding route
-        const routeP = (clamped - 0.54) / 0.34;
+        // Phase 2: Arrow swoops into the landscape and draws the inner winding route
+        const routeP = (clamped - 0.58) / 0.30;
         const targetDistance = Math.min(routeP * routeLen, routeLen);
         try {
           if (routePath) {
@@ -119,7 +145,7 @@ export function ScrollAssembledMark({
           // Fallback
         }
       } else {
-        // Phase 3: Arrow arrives at the destination pin (90, 12)
+        // Phase 3: Arrow docks into the destination pin at (90, 12)
         const dockP = (clamped - 0.88) / 0.12;
         const startX = 84;
         const startY = 31;
@@ -132,7 +158,7 @@ export function ScrollAssembledMark({
           x: currX,
           y: currY,
           angle: 0,
-          visible: dockP < 0.95,
+          visible: dockP < 0.92,
           scale: Math.max(1 - dockP * 0.45, 0.55),
         });
       }
@@ -149,10 +175,14 @@ export function ScrollAssembledMark({
   }, []);
 
   // Proportional phase progress for SVG elements
-  const frameP = Math.min(Math.max((progress - 0.02) / 0.52, 0), 1);
-  const groundP = Math.min(Math.max((progress - 0.28) / 0.40, 0), 1);
-  const detailsP = Math.min(Math.max((progress - 0.48) / 0.38, 0), 1);
+  const leadInP = Math.min(Math.max((progress - 0.01) / 0.13, 0), 1);
+  const frameP = Math.min(Math.max((progress - 0.14) / 0.44, 0), 1);
+  const groundP = Math.min(Math.max((progress - 0.24) / 0.40, 0), 1);
+  const detailsP = Math.min(Math.max((progress - 0.52) / 0.36, 0), 1);
   const pinP = Math.min(Math.max((progress - 0.84) / 0.16, 0), 1);
+
+  const leadInLen = 56;
+  const leadInOffset = leadInLen * (1 - leadInP);
 
   const frameLength = 265;
   const frameOffset = frameLength * (1 - frameP);
@@ -199,6 +229,28 @@ export function ScrollAssembledMark({
             <feGaussianBlur stdDeviation="2.5" />
           </filter>
         </defs>
+
+        {/* Incoming journey lead-in path connecting from above into the logo corner */}
+        <path
+          d="M 20 -40 C 24 -20 28 -5 32 14"
+          stroke="var(--forest)"
+          strokeWidth="1.6"
+          strokeDasharray="3 5"
+          strokeLinecap="round"
+          fill="none"
+          opacity={0.35}
+        />
+        <path
+          ref={leadInPathRef}
+          d="M 20 -40 C 24 -20 28 -5 32 14"
+          stroke="url(#teiArrowGrad)"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeDasharray={leadInLen}
+          strokeDashoffset={leadInOffset}
+          fill="none"
+          className="drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]"
+        />
 
         <g clipPath="url(#tei-big-mark-clip)">
           {/* Base ground fill emerges as frame is drawn */}

@@ -282,10 +282,10 @@ export default async function HomePage() {
           {/* Ambient warm radial glow framing the drawn brand centerpiece */}
           <div className="pointer-events-none absolute top-12 left-1/2 h-72 w-96 -translate-x-1/2 rounded-full bg-peach/10 blur-3xl" />
 
-          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-7 px-4 py-20 text-center sm:px-8 sm:py-28">
+          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-4 py-20 text-center sm:px-8 sm:py-28">
             <ScrollAssembledMark
-              size={280}
-              className="w-56 sm:w-72 md:w-80 lg:w-[320px] drop-shadow-[0_16px_36px_rgba(0,0,0,0.35)]"
+              size={360}
+              className="w-64 sm:w-80 md:w-96 lg:w-[400px] drop-shadow-[0_24px_52px_rgba(0,0,0,0.45)]"
             />
             <ScrollGlowHeading as="h2" className="text-cream max-w-2xl font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-balance">
               Your next trip, planned properly.
